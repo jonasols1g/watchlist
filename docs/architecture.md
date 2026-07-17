@@ -356,7 +356,7 @@ export function useMediaProvider(): MediaProvider { /* ... */ }
 | Rute | Side | Ansvar |
 |---|---|---|
 | `/` | `HomePage` | Tekstsøk + talesøk, resultatliste, klikk → `/title/:id` |
-| `/watchlist` | `WatchlistPage` | Faner "Planlagt"/"Sett", statusbytte, fjerning |
+| `/mylist` | `WatchlistPage` | Faner "Planlagt"/"Sett", statusbytte, fjerning |
 | `/title/:id` | `TitleDetailPage` | Henter detaljer via `useMediaDetails(id)`, viser rating/sjangre/streaming, watchlist-toggle |
 | `*` | `NotFoundPage` | Enkel 404-side |
 

@@ -7,7 +7,7 @@ Se [architecture.md](./architecture.md) for teknisk struktur bak sidene beskreve
 | Rute | Side | Innhold |
 |---|---|---|
 | `/` | Hjem/søk | Søkefelt (tekst + tale), resultatgrid |
-| `/watchlist` | Watchlist | Faner "Planlagt" / "Sett" |
+| `/mylist` | Watchlist | Faner "Planlagt" / "Sett" |
 | `/title/:id` | Detaljvisning | Full informasjon om én tittel |
 | `*` | 404 | Enkel melding + lenke tilbake til hjem |
 

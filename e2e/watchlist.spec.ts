@@ -22,7 +22,7 @@ test.describe("Watchlist", () => {
     await expect(page.getByText("I watchlisten – Planlagt")).toBeVisible();
 
     await page.getByRole("link", { name: "Watchlist", exact: true }).click();
-    await expect(page).toHaveURL(/\/watchlist$/);
+    await expect(page).toHaveURL(/\/mylist$/);
 
     // "Planlagt" er standardfanen, og tittelen skal ligge der.
     await expect(

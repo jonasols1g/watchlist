@@ -19,7 +19,7 @@ export function App() {
             <WatchlistSaveErrorBanner />
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/watchlist" element={<WatchlistPage />} />
+              <Route path="/mylist" element={<WatchlistPage />} />
               <Route path="/title/:id" element={<TitleDetailPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

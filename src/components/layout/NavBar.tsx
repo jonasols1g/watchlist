@@ -30,7 +30,7 @@ export function NavBar() {
             </NavLink>
           </li>
           <li>
-            <NavLink to="/watchlist" className={linkClassName}>
+            <NavLink to="/mylist" className={linkClassName}>
               Watchlist
             </NavLink>
           </li>

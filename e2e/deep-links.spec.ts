@@ -20,10 +20,10 @@ test.describe("Dyplenker og refresh", () => {
     await expect(page.getByRole("heading", { name: "Søk" })).toBeVisible();
   });
 
-  test("/watchlist lastet direkte og etter refresh viser watchlist-siden", async ({
+  test("/mylist lastet direkte og etter refresh viser watchlist-siden", async ({
     page,
   }) => {
-    await page.goto("./watchlist");
+    await page.goto("./mylist");
     await expect(
       page.getByRole("heading", { name: "Watchlist" }),
     ).toBeVisible();
