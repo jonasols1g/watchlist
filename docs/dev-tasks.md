@@ -18,7 +18,7 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 | 8 — Talesøk | ✅ Ferdig 2026-07-17 |
 | 9 — Polish | 🟡 Delvis 2026-07-17 (Pages-publisering avventer) |
 | 10 — Ekte API-integrasjon | ☐ Ikke startet |
-| 11 — Visuelt redesign (CineFind) | ☐ Ikke startet |
+| 11 — Visuelt redesign (CineFind) | ✅ Ferdig 2026-07-18 |
 
 ## Fase 1 — Prosjektoppsett
 - [x] Pin Node (nyeste LTS) i `.nvmrc` og `"engines"` i `package.json`; npm brukes som pakkebehandler.
@@ -135,15 +135,23 @@ E2E med stubbede API-responser:
 
 Uavhengig av fase 10 (rekkefølgen mellom dem spiller ingen rolle — denne fasen restyler fase 5–9s sider og trenger ikke ekte API-data). Design-referanse: [docs/design-spec/README.md](./design-spec/README.md) og skjermbildene i `docs/design-spec/screenshots/` — en hifi HTML-prototype som skal **gjenskapes** i eksisterende React/Tailwind-stack, ikke kopieres direkte. Se [design.md](./design.md#visuelt-tema-cinefind-fase-11) for hvordan beslutningene går inn i eksisterende struktur.
 
-- [ ] Legg til Google Fonts (Space Grotesk 600/700, Manrope 400–800) i `index.html`, og utvid CSP-en (`style-src`/`font-src` for `fonts.googleapis.com`/`fonts.gstatic.com`) i `vite.config.ts`s csp-meta-tag-plugin.
-- [ ] Definer design-tokens (bakgrunnsgradient, primærgradient, gull, de fem per-tittel-huene, overflate-/tekstfarger) som Tailwind v4 `@theme`-variabler i `src/index.css`, iht. de eksakte `oklch()`-verdiene i design-spec.
-- [ ] Implementer `utils/accentHue.ts`: deterministisk (hash-basert) mapping fra `MediaSummary.id` til én av de fem faste hue-verdiene — rent UI-lag, **ikke** et nytt felt på `Media`/`MediaSummary` (bevarer `MediaProvider`-kontrakten uendret foran fase 10).
-- [ ] Restyle `NavBar` til bunn-fanebar (fixed, 78px, blur/translucent, aktiv fane i magenta, stjerneikon for Watchlist) — samme ruter (`/`, `/mylist`), kun visuell endring.
-- [ ] Restyle `HomePage`/`SearchBar`: "CineFind"-wordmark (gradient-tekst), pill-søkefelt, gradient-søkeknapp, sirkulær mikrofonknapp — layout iht. skjerm 1.
-- [ ] Restyle `SearchResultsGrid`/`SearchResultCard`: 2-kolonners grid, plakat med hue-tonet ring, stjerne-toggle-badge (fylt/tom etter watchlist-status), meta-tekst i tittelens hue.
-- [ ] Restyle `TitleDetailPage`: full-bleed hero m/bunn-scrim, tilbake-knapp, rating-badges (IMDb gull, Rotten Tomatoes rødtonet), strømme-badges per tjeneste, fast gradient-CTA nederst.
-- [ ] Restyle `WatchlistPage`/`WatchlistItemCard`: radvisning med plakat-thumb, hue-ring, hue-tonet meta, sirkulær stjerne-fjern-knapp.
-- [ ] Bevar all eksisterende funksjonalitet, tilstander (lasting/tom/feil) og a11y (`aria-label`er, fokus-styling) fra fase 5–9 uendret — dette er en ren restyling, ingen atferdsendring. Design-spec-en dekker ikke disse tilstandene eksplisitt; de skal likevel bruke samme tema-tokens for et konsekvent uttrykk (jf. [design.md](./design.md#styling)).
-- [ ] Oppdater eventuelle komponenttester som matcher på gamle Tailwind-klassenavn.
-- [ ] **E2E:** kjør eksisterende `e2e/search.spec.ts`, `e2e/watchlist.spec.ts` og `e2e/deep-links.spec.ts` uendret mot den nye stylingen — de tester atferd, ikke utseende, og skal fortsatt være grønne.
-- [ ] **Definition of done:** Alle fire skjermbilder i `docs/design-spec/screenshots/` er gjenskapt pixel-nært (designet er hifi) i produksjonsbygget, eksisterende E2E-suite er grønn, og verken `MediaProvider`-kontrakten eller datamodellen er endret.
+- [x] Legg til Google Fonts (Space Grotesk 600/700, Manrope 400–800) i `index.html`, og utvid CSP-en (`style-src`/`font-src` for `fonts.googleapis.com`/`fonts.gstatic.com`) i `vite.config.ts`s csp-meta-tag-plugin.
+- [x] Definer design-tokens (bakgrunnsgradient, primærgradient, gull, de fem per-tittel-huene, overflate-/tekstfarger) som Tailwind v4 `@theme`-variabler i `src/index.css`, iht. de eksakte `oklch()`-verdiene i design-spec.
+- [x] Implementer `utils/accentHue.ts`: deterministisk (hash-basert) mapping fra `MediaSummary.id` til én av de fem faste hue-verdiene — rent UI-lag, **ikke** et nytt felt på `Media`/`MediaSummary` (bevarer `MediaProvider`-kontrakten uendret foran fase 10).
+- [x] Restyle `NavBar` til bunn-fanebar (fixed, 78px, blur/translucent, aktiv fane i magenta, stjerneikon for Watchlist) — samme ruter (`/`, `/mylist`), kun visuell endring.
+- [x] Restyle `HomePage`/`SearchBar`: "CineFind"-wordmark (gradient-tekst), pill-søkefelt, gradient-søkeknapp, sirkulær mikrofonknapp — layout iht. skjerm 1.
+- [x] Restyle `SearchResultsGrid`/`SearchResultCard`: 2-kolonners grid, plakat med hue-tonet ring, stjerne-toggle-badge (fylt/tom etter watchlist-status), meta-tekst i tittelens hue.
+- [x] Restyle `TitleDetailPage`: full-bleed hero m/bunn-scrim, tilbake-knapp, rating-badges (IMDb gull, Rotten Tomatoes rødtonet), strømme-badges per tjeneste, fast gradient-CTA nederst.
+- [x] Restyle `WatchlistPage`/`WatchlistItemCard`: radvisning med plakat-thumb, hue-ring, hue-tonet meta, sirkulær stjerne-fjern-knapp.
+- [x] Bevar all eksisterende funksjonalitet, tilstander (lasting/tom/feil) og a11y (`aria-label`er, fokus-styling) fra fase 5–9 uendret — dette er en ren restyling, ingen atferdsendring. Design-spec-en dekker ikke disse tilstandene eksplisitt; de skal likevel bruke samme tema-tokens for et konsekvent uttrykk (jf. [design.md](./design.md#styling)).
+- [x] Oppdater eventuelle komponenttester som matcher på gamle Tailwind-klassenavn.
+- [x] **E2E:** kjør eksisterende `e2e/search.spec.ts`, `e2e/watchlist.spec.ts` og `e2e/deep-links.spec.ts` uendret mot den nye stylingen — de tester atferd, ikke utseende, og skal fortsatt være grønne.
+- [x] **Definition of done:** Alle fire skjermbilder i `docs/design-spec/screenshots/` er gjenskapt pixel-nært (designet er hifi) i produksjonsbygget, eksisterende E2E-suite er grønn, og verken `MediaProvider`-kontrakten eller datamodellen er endret.
+
+**Bevisste, reviewer-/verifier-godkjente avvik fra pixel-perfect** (alle bekreftet fungerende i produksjonsbygget):
+- Bunn-fanebarens `/`-fane heter «Søk» (matcher design-spec-teksten), ikke «Hjem» som tidligere — `App.test.tsx`/`e2e/smoke.spec.ts` oppdatert.
+- `WatchlistPage`s `<h1>` beholder teksten «Watchlist» (ikke «Min liste» som i skjermbildet), fordi `App.test.tsx` og det beskyttede `e2e/deep-links.spec.ts` forventer nøyaktig den teksten; anteallet vises som søsken-element.
+- `WatchlistStarToggle` på søkeresultat-kort legger kun til/fjerner (bytter ikke planlagt/sett) — synlig statustekst beholdt for å bevare `e2e/watchlist.spec.ts`. Statusbytte skjer fortsatt via `WatchlistToggleButton`/`WatchlistItemCard`.
+- `WatchlistItemCard` beholder en sekundær «Merk som sett/planlagt»-lenke ved siden av stjernen (skjermbildet viser kun stjerne), for å bevare eksisterende fase 7-funksjonalitet.
+- Detaljside-heroen gjenbruker `posterUrl` (intet nytt backdrop-felt i `data-model.md`).
+- Full-bleed hero bryter kun ut av `<main>`s egen padding, ikke hele viewport på bred desktop (appen skal forbli responsiv, jf. [design.md](./design.md#styling); design-spec-en er en 390px mobil-mockup).

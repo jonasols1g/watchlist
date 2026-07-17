@@ -48,6 +48,18 @@ Kort logg over hva som er gjort per dag. Nyeste øverst. Én oppføring per dag 
 
 **Neste:** Pages-beslutningen (offentliggjøre repoet vs. GitHub Pro) må tas før fase 9 kan hakes helt av og fase 10s Pages-oppgave kan gjennomføres.
 
+## 2026-07-18
+
+- Fase 11 (visuelt redesign, CineFind-tema) lagt til i faseplanen og implementert samme dag. Bruker leverte en tekstlig design-spec med fire hifi-skjermbilder (`docs/design-spec/`) — en statisk HTML-mockup som skulle gjenskapes i den eksisterende React/Tailwind-stacken, ikke kopieres direkte. Bruker ba eksplisitt om å hoppe over `feature-planner`, siden dette er en restyling av allerede planlagte sider (fase 5–9), ikke en ny feature.
+- Faseplan og designdokumentasjon oppdatert direkte på `main` før implementasjon (jf. praksis fra PR #10): `docs/design.md` fikk en ny seksjon som oppsummerer fargepalett/typografi/hue-mekanikk, `docs/dev-tasks.md` fikk fase 11s oppgaveliste.
+- Implementert via PR #11 med full agent-loop: `dev` → `reviewer` (godkjent uten funn) → `verifier` (grønn CI + drev hele flyten manuelt mot produksjonsbygget: tom-tilstand → søk → søkeresultater → detaljside → legg til i watchlist → watchlist-siden, sammenlignet visuelt mot alle fire referanseskjermbildene) → squash-merge.
+- Nøkkelbeslutning: per-tittel "hue" (aksentfarge på plakat-ring/meta-tekst/stjerne) er implementert som en ren UI-lags hash-funksjon (`utils/accentHue.ts`, deterministisk fra `id`), **ikke** et nytt felt på `Media`/`MediaSummary` — holder `MediaProvider`-kontrakten og datamodellen uendret foran fase 10.
+- Google Fonts (Space Grotesk, Manrope) krevde en liten, målrettet utvidelse av CSP-en (`style-src`/`font-src` for `fonts.googleapis.com`/`fonts.gstatic.com`), fortsatt kun injisert ved build — verifisert at ingen andre direktiver ble svekket og at ingen ekte API-kall skjer.
+- Seks bevisste, mindre avvik fra pixel-perfect (NavBar-tekst, watchlist-tittel, stjerne-toggles skop, ekstra statuslenke, hero som gjenbruker `posterUrl`, hero-breakout begrenset til `<main>`) ble vurdert og godkjent av både `reviewer` og `verifier` — alle bevarer eksisterende, testdekket funksjonalitet fra fase 5–9. Se detaljene i `docs/dev-tasks.md` under fase 11.
+- Ingen nye API-kall, ingen endring i MOTN/OMDb-forberedelsene for fase 10.
+
+**Neste:** Pages-beslutningen står fortsatt åpen (se over) — ellers er fase 10 (ekte API-integrasjon) neste større milepæl.
+
 ## 2026-07-16
 
 Prosjektstart. Ingen kode skrevet ennå — dagen gikk med til planlegging og dokumentasjon.
