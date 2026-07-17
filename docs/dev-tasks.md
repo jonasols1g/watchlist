@@ -8,7 +8,7 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 
 | Fase | Status |
 |---|---|
-| 1 — Prosjektoppsett | 🔄 Pågår — venter på grønn CI på push |
+| 1 — Prosjektoppsett | ✅ Ferdig 2026-07-17 |
 | 2 — Domenemodell og MockMediaProvider | ☐ Ikke startet |
 | 3 — Cache-lag | ☐ Ikke startet |
 | 4 — App-skjelett | ☐ Ikke startet |
@@ -31,7 +31,7 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 - [x] Installer React Router.
 - [x] Opprett mappestrukturen fra [architecture.md](./architecture.md).
 - [x] Sett opp GitHub Actions-workflow (`.github/workflows/ci.yml`): lint + enhetstester + `npm audit` (brekk på høy/kritisk) på hver push; egen E2E-jobb (`npx playwright install --with-deps` + `npx playwright test`) som laster opp rapporten som artifact ved feil; build-steg som kopierer `dist/index.html` → `dist/404.html` (SPA-fallback for Pages). Selve Pages-publiseringen aktiveres i fase 9.
-- [ ] **Definition of done:** `npm run dev` starter en tom app, `npm test` og `npm run test:e2e` kjører (selv uten tester ennå), lint kjører uten feil, CI er grønn på push.
+- [x] **Definition of done:** `npm run dev` starter en tom app, `npm test` og `npm run test:e2e` kjører (selv uten tester ennå), lint kjører uten feil, CI er grønn på push.
 
 ## Fase 2 — Domenemodell, MediaProvider-interface og MockMediaProvider
 - [ ] Opprett `types/media.ts`, `types/watchlist.ts`, `types/cache.ts`.

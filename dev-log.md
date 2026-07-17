@@ -15,7 +15,9 @@ Kort logg over hva som er gjort per dag. Nyeste øverst. Én oppføring per dag 
 
 - Fase 1 (prosjektoppsett) implementert med agent-teamet: `dev` scaffoldet Vite 8 + React 19 + TS 6 med Tailwind v4 (`@tailwindcss/vite`), ESLint (type-checked) + Prettier, Vitest/RTL, Playwright (webServer mot produksjonsbygg), React Router, mappestruktur og CI-workflow uten Pages-deploy. 404-fallbacken ligger i selve build-scriptet, så den gjelder også lokalt og i E2E. `reviewer` godkjente med to småting (malrest `public/icons.svg` slettet, `lang="no"` i `index.html`) som ble fikset i hovedsamtalen; `verifier` bekreftet lint, enhetstest, E2E, build (404.html identisk med index.html) og Prettier grønt.
 
-**Neste:** verifisere grønn CI på push (siste DoD-punkt i fase 1), deretter fase 2 (domenemodell + MockMediaProvider).
+- CI grønn på push (begge jobber, inkl. E2E). Fase 1 er dermed komplett iht. Definition of done.
+
+**Neste:** fase 2 i `dev-tasks.md` (domenemodell, `MediaProvider`-interface og `MockMediaProvider`).
 
 ## 2026-07-16
 
