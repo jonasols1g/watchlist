@@ -8,7 +8,7 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 
 | Fase | Status |
 |---|---|
-| 1 — Prosjektoppsett | ☐ Ikke startet |
+| 1 — Prosjektoppsett | 🔄 Pågår — venter på grønn CI på push |
 | 2 — Domenemodell og MockMediaProvider | ☐ Ikke startet |
 | 3 — Cache-lag | ☐ Ikke startet |
 | 4 — App-skjelett | ☐ Ikke startet |
@@ -20,17 +20,17 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 | 10 — Ekte API-integrasjon | ☐ Ikke startet |
 
 ## Fase 1 — Prosjektoppsett
-- [ ] Pin Node (nyeste LTS) i `.nvmrc` og `"engines"` i `package.json`; npm brukes som pakkebehandler.
-- [ ] Sett opp Vite + React + TypeScript. `tsconfig`: `strict: true` og `noUncheckedIndexedAccess: true` fra dag én (smertefullt å skru på senere).
-- [ ] Sett `base: '/watchlist/'` i `vite.config.ts` — appen deployes til GitHub Pages under understi (se deploy-avsnittet i [architecture.md](./architecture.md#deploy-github-pages)).
-- [ ] Installer og konfigurer Tailwind CSS **v4** via `@tailwindcss/vite`-plugin (ikke v3-oppsettet med `tailwind.config.js`/`postcss.config.js`).
-- [ ] Sett opp ESLint (`typescript-eslint` recommended-type-checked + `eslint-plugin-react-hooks`) og Prettier med standardinnstillinger. Konvensjon: named exports, ikke default exports.
-- [ ] Installer Vitest + React Testing Library (inkl. jsdom-miljø, `setupTests.ts`).
-- [ ] Installer og konfigurer **Playwright** (`playwright.config.ts`, `webServer` som starter Vite-preview mot bygget app). E2E-spec-er ligger i `e2e/` — se [Teststrategi](./architecture.md#teststrategi).
-- [ ] **Ekskluder `e2e/` fra Vitest** (`test.exclude` i `vite.config.ts`). Begge rammeverk plukker opp `*.spec.ts` som standard; uten dette forsøker Vitest å kjøre Playwright-spec-ene og feiler kryptisk.
-- [ ] Installer React Router.
-- [ ] Opprett mappestrukturen fra [architecture.md](./architecture.md).
-- [ ] Sett opp GitHub Actions-workflow (`.github/workflows/ci.yml`): lint + enhetstester + `npm audit` (brekk på høy/kritisk) på hver push; egen E2E-jobb (`npx playwright install --with-deps` + `npx playwright test`) som laster opp rapporten som artifact ved feil; build-steg som kopierer `dist/index.html` → `dist/404.html` (SPA-fallback for Pages). Selve Pages-publiseringen aktiveres i fase 9.
+- [x] Pin Node (nyeste LTS) i `.nvmrc` og `"engines"` i `package.json`; npm brukes som pakkebehandler.
+- [x] Sett opp Vite + React + TypeScript. `tsconfig`: `strict: true` og `noUncheckedIndexedAccess: true` fra dag én (smertefullt å skru på senere).
+- [x] Sett `base: '/watchlist/'` i `vite.config.ts` — appen deployes til GitHub Pages under understi (se deploy-avsnittet i [architecture.md](./architecture.md#deploy-github-pages)).
+- [x] Installer og konfigurer Tailwind CSS **v4** via `@tailwindcss/vite`-plugin (ikke v3-oppsettet med `tailwind.config.js`/`postcss.config.js`).
+- [x] Sett opp ESLint (`typescript-eslint` recommended-type-checked + `eslint-plugin-react-hooks`) og Prettier med standardinnstillinger. Konvensjon: named exports, ikke default exports.
+- [x] Installer Vitest + React Testing Library (inkl. jsdom-miljø, `setupTests.ts`).
+- [x] Installer og konfigurer **Playwright** (`playwright.config.ts`, `webServer` som starter Vite-preview mot bygget app). E2E-spec-er ligger i `e2e/` — se [Teststrategi](./architecture.md#teststrategi).
+- [x] **Ekskluder `e2e/` fra Vitest** (`test.exclude` i `vite.config.ts`). Begge rammeverk plukker opp `*.spec.ts` som standard; uten dette forsøker Vitest å kjøre Playwright-spec-ene og feiler kryptisk.
+- [x] Installer React Router.
+- [x] Opprett mappestrukturen fra [architecture.md](./architecture.md).
+- [x] Sett opp GitHub Actions-workflow (`.github/workflows/ci.yml`): lint + enhetstester + `npm audit` (brekk på høy/kritisk) på hver push; egen E2E-jobb (`npx playwright install --with-deps` + `npx playwright test`) som laster opp rapporten som artifact ved feil; build-steg som kopierer `dist/index.html` → `dist/404.html` (SPA-fallback for Pages). Selve Pages-publiseringen aktiveres i fase 9.
 - [ ] **Definition of done:** `npm run dev` starter en tom app, `npm test` og `npm run test:e2e` kjører (selv uten tester ennå), lint kjører uten feil, CI er grønn på push.
 
 ## Fase 2 — Domenemodell, MediaProvider-interface og MockMediaProvider

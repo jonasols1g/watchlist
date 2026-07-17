@@ -13,7 +13,9 @@ Kort logg over hva som er gjort per dag. Nyeste øverst. Én oppføring per dag 
 - Ryddet `todo.md`: løste punkter (Node, dokumentasjons-commit) fjernet — historikken bor her i loggen.
 - Satte opp subagent-team i `.claude/agents/` etter diskusjon med bruker (utvidet fra to til fire roller): `feature-planner` (vurderer nye features mot docs, read-only), `dev` (implementerer faser, kode + enhetstester), `reviewer` (diff-review mot docs og DoD, read-only) og `verifier` (kjører tester/bygg/E2E, endrer aldri kode). Bevisst droppet egne agenter for arkitektur, dokumentasjon og UX — dekkes av `feature-planner` og hovedsamtalen.
 
-**Neste:** fase 1 i `dev-tasks.md`, kjørt med det nye agent-teamet.
+- Fase 1 (prosjektoppsett) implementert med agent-teamet: `dev` scaffoldet Vite 8 + React 19 + TS 6 med Tailwind v4 (`@tailwindcss/vite`), ESLint (type-checked) + Prettier, Vitest/RTL, Playwright (webServer mot produksjonsbygg), React Router, mappestruktur og CI-workflow uten Pages-deploy. 404-fallbacken ligger i selve build-scriptet, så den gjelder også lokalt og i E2E. `reviewer` godkjente med to småting (malrest `public/icons.svg` slettet, `lang="no"` i `index.html`) som ble fikset i hovedsamtalen; `verifier` bekreftet lint, enhetstest, E2E, build (404.html identisk med index.html) og Prettier grønt.
+
+**Neste:** verifisere grønn CI på push (siste DoD-punkt i fase 1), deretter fase 2 (domenemodell + MockMediaProvider).
 
 ## 2026-07-16
 

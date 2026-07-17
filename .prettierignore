@@ -1,0 +1,11 @@
+dist
+coverage
+playwright-report
+test-results
+package-lock.json
+
+# Prosjektdokumentasjon vedlikeholdes manuelt
+docs/
+dev-log.md
+README.md
+.claude/

@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+
+jobs:
+  test:
+    name: Lint, enhetstester, audit og bygg
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      # Brekk bygget på sårbarheter med høy/kritisk alvorlighetsgrad.
+      - run: npm audit --audit-level=high
+      # Bygg-scriptet kopierer dist/index.html -> dist/404.html (SPA-fallback
+      # for GitHub Pages). Selve Pages-publiseringen aktiveres i fase 9.
+      - run: npm run build
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      # webServer i playwright.config.ts bygger og starter vite preview
+      # mot produksjonsbygget.
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
