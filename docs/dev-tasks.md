@@ -10,7 +10,7 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 |---|---|
 | 1 — Prosjektoppsett | ✅ Ferdig 2026-07-17 |
 | 2 — Domenemodell og MockMediaProvider | ✅ Ferdig 2026-07-17 |
-| 3 — Cache-lag | ☐ Ikke startet |
+| 3 — Cache-lag | ✅ Ferdig 2026-07-17 |
 | 4 — App-skjelett | ☐ Ikke startet |
 | 5 — Søkeside | ☐ Ikke startet |
 | 6 — Detaljside | ☐ Ikke startet |
@@ -41,10 +41,10 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 - [x] **Definition of done:** `MockMediaProvider.search()` og `.getDetails()` fungerer og har enhetstester.
 
 ## Fase 3 — Cache-lag
-- [ ] Opprett `services/cache/CacheStore.ts`, `LocalStorageCacheStore.ts`, `cacheKeys.ts`, `utils/normalizeQuery.ts`, `utils/storageKeys.ts`.
-- [ ] `LocalStorageCacheStore` feature-detecter `localStorage` og faller tilbake til in-memory-lagring; leste entries valideres med type guards (feil form = cache-miss, fjernes stille). Se «Robusthet og sikkerhet» i [architecture.md](./architecture.md#robusthet-og-sikkerhet).
-- [ ] Opprett `services/media/CachingMediaProvider.ts`.
-- [ ] **Definition of done:** Enhetstester dekker: set/get-roundtrip, TTL-utløp, quota-exceeded-eviction (eldste/utløpte først), at cache-navnerom er adskilt fra watchlist-navnerom, at korrupt/feilformet entry behandles som miss, in-memory-fallback når `localStorage` er utilgjengelig, og at `CachingMediaProvider` hopper over indre kall ved cache-hit.
+- [x] Opprett `services/cache/CacheStore.ts`, `LocalStorageCacheStore.ts`, `cacheKeys.ts`, `utils/normalizeQuery.ts`, `utils/storageKeys.ts`.
+- [x] `LocalStorageCacheStore` feature-detecter `localStorage` og faller tilbake til in-memory-lagring; leste entries valideres med type guards (feil form = cache-miss, fjernes stille). Se «Robusthet og sikkerhet» i [architecture.md](./architecture.md#robusthet-og-sikkerhet).
+- [x] Opprett `services/media/CachingMediaProvider.ts`.
+- [x] **Definition of done:** Enhetstester dekker: set/get-roundtrip, TTL-utløp, quota-exceeded-eviction (eldste/utløpte først), at cache-navnerom er adskilt fra watchlist-navnerom, at korrupt/feilformet entry behandles som miss, in-memory-fallback når `localStorage` er utilgjengelig, og at `CachingMediaProvider` hopper over indre kall ved cache-hit.
 
 ## Fase 4 — App-skjelett
 - [ ] Opprett `App.tsx` med `BrowserRouter basename={import.meta.env.BASE_URL}` (GitHub Pages-understi), `NavBar`, `Routes` for `/`, `/watchlist`, `/title/:id`, `*`.
