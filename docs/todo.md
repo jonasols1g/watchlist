@@ -25,13 +25,18 @@ Nvm ble installert via `brew install nvm` (0.40.6, ikke curl-scriptet), init-lin
 - [x] `git add README.md docs/ && git commit` — gjort 2026-07-17, `dev-log.md` ble også tatt med.
 - [x] `git push`
 
-## 3. Aktiver GitHub Pages
+## 3. Aktiver GitHub Pages — ⏸ utsatt 2026-07-17 (blokkert av privat repo)
 
 Repoet finnes allerede (`git@github.com:jonasols1g/watchlist.git`, verifisert 2026-07-17 — SSH-auth virker, `main` er pushet). Navnet er `watchlist`, som stemmer med `base: '/watchlist/'`. Produksjons-URL blir <https://jonasols1g.github.io/watchlist/>.
 
-- [ ] Slå på Pages i repo-innstillingene med **Source: GitHub Actions** (ikke «Deploy from a branch» — workflowen i fase 1/9 bruker `actions/deploy-pages`).
+**Funn 2026-07-17:** Forsøk på å aktivere Pages via `gh api` feilet med «Your current plan does not support GitHub Pages for this repository» — repoet er **privat**, og Pages på gratisplanen krever offentlig repo. Beslutning: utsatt til fase 9, da Pages først trengs reelt. Da må ett av disse velges:
 
-Selve publiseringen aktiveres først i fase 9; dette er bare bryteren som må stå riktig for at workflowen skal ha lov til å deploye.
+- Gjør repoet offentlig (`gh repo edit --visibility public`) — gratis; koden er trygg å publisere (API-nøkler ligger som Actions-secrets, ikke i repoet), men husk risikonotatet i [architecture.md](./architecture.md#kjente-forutsetninger-og-risikoer) om eksponerte nøkler i bundelen når appen deles.
+- Oppgrader til GitHub Pro og behold repoet privat (Pages-siden blir uansett offentlig for den som har URL-en).
+
+- [ ] (Fase 9) Velg løsning over, og slå deretter på Pages med **Source: GitHub Actions** (ikke «Deploy from a branch» — workflowen bruker `actions/deploy-pages`): `gh api -X POST repos/jonasols1g/watchlist/pages -f build_type=workflow`
+
+Fase 1–8 er ikke blokkert av dette; deploy-workflowen kan til og med skrives i fase 1, den vil bare feile på deploy-steget til bryteren er på.
 
 ---
 

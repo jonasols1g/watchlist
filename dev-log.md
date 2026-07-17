@@ -8,8 +8,9 @@ Kort logg over hva som er gjort per dag. Nyeste øverst. Én oppføring per dag 
 - Installerte Node: nvm 0.40.6 via Homebrew (init i `~/.zshrc`, `NVM_DIR=~/.nvm`), deretter `nvm install --lts` → Node v24.18.0 / npm 11.16.0, satt som default. Punkt 1 i `todo.md` er dermed ferdig.
 - Gjenopprettet rot-`README.md` som kort prosjektbeskrivelse med peker til `docs/`.
 - Committet og pushet dokumentasjonen: `README.md`, `docs/` og `dev-log.md`. Punkt 2 i `todo.md` er dermed ferdig.
+- Installerte `gh` (2.96.0) og logget inn som `jonasols1g`. Forsøkte å slå på GitHub Pages, men repoet er privat og gratisplanen støtter ikke Pages for private repoer. Beslutning: punkt 3 utsatt til fase 9 — da velges enten offentlig repo eller GitHub Pro. Fase 1–8 er ikke blokkert.
 
-**Neste:** punkt 3 i `todo.md` (slå på GitHub Pages med Source: GitHub Actions), deretter fase 1 i `dev-tasks.md`.
+**Neste:** fase 1 i `dev-tasks.md`.
 
 ## 2026-07-16
 
