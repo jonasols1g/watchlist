@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
+import { WatchlistProvider } from "../../context/WatchlistContext";
 import { createMediaSummary } from "../../test/fixtures/media.fixtures";
 import { SearchResultsGrid } from "./SearchResultsGrid";
 
@@ -12,9 +13,11 @@ describe("SearchResultsGrid", () => {
     ];
 
     render(
-      <MemoryRouter>
-        <SearchResultsGrid results={results} />
-      </MemoryRouter>,
+      <WatchlistProvider>
+        <MemoryRouter>
+          <SearchResultsGrid results={results} />
+        </MemoryRouter>
+      </WatchlistProvider>,
     );
 
     expect(screen.getAllByRole("link")).toHaveLength(2);
@@ -24,9 +27,11 @@ describe("SearchResultsGrid", () => {
 
   it("viser en tom liste uten treff", () => {
     render(
-      <MemoryRouter>
-        <SearchResultsGrid results={[]} />
-      </MemoryRouter>,
+      <WatchlistProvider>
+        <MemoryRouter>
+          <SearchResultsGrid results={[]} />
+        </MemoryRouter>
+      </WatchlistProvider>,
     );
 
     expect(screen.queryAllByRole("link")).toHaveLength(0);

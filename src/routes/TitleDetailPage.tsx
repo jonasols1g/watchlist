@@ -5,6 +5,7 @@ import { GenreTags } from "../components/media/GenreTags";
 import { PosterImage } from "../components/media/PosterImage";
 import { RatingsBadge } from "../components/media/RatingsBadge";
 import { StreamingProvidersList } from "../components/media/StreamingProvidersList";
+import { WatchlistToggleButton } from "../components/watchlist/WatchlistToggleButton";
 import { useMediaDetails } from "../hooks/useMediaDetails";
 import type { Media, MediaType, SeriesMedia } from "../types/media";
 
@@ -35,10 +36,7 @@ function buildMetaLine(media: Media): string {
       parts.push(`${media.runtimeMinutes} min`);
     }
   } else {
-    if (
-      media.numberOfSeasons !== null &&
-      media.numberOfSeasons !== undefined
-    ) {
+    if (media.numberOfSeasons !== null && media.numberOfSeasons !== undefined) {
       const label = media.numberOfSeasons === 1 ? "sesong" : "sesonger";
       parts.push(`${media.numberOfSeasons} ${label}`);
     }
@@ -53,7 +51,7 @@ function buildMetaLine(media: Media): string {
 /**
  * Detaljside for én tittel (se docs/design.md#detaljvisning). Rekkefølgen på
  * feltene følger dokumentasjonen: plakat/tittel, beskrivelse, sjangre,
- * rating, strømmetjenester. `WatchlistToggleButton` kommer i fase 7.
+ * rating, strømmetjenester, watchlist-toggle.
  */
 export function TitleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -83,9 +81,7 @@ export function TitleDetailPage() {
               <h1 className="text-2xl font-bold">{media.title}</h1>
               {media.originalTitle !== undefined &&
                 media.originalTitle !== media.title && (
-                  <p className="text-slate-500 italic">
-                    {media.originalTitle}
-                  </p>
+                  <p className="text-slate-500 italic">{media.originalTitle}</p>
                 )}
               <p className="text-slate-600">{buildMetaLine(media)}</p>
             </div>
@@ -98,6 +94,8 @@ export function TitleDetailPage() {
           <RatingsBadge ratings={media.ratings} />
 
           <StreamingProvidersList streaming={media.streaming} />
+
+          <WatchlistToggleButton media={media} />
         </article>
       )}
     </section>

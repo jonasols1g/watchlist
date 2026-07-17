@@ -9,4 +9,8 @@ import { afterEach } from "vitest";
 // stående i DOM-treet. Rydd derfor eksplisitt her, felles for alle tester.
 afterEach(() => {
   cleanup();
+  // `watchlistStorage` (og cache-laget) leser/skriver ekte `localStorage` i
+  // jsdom-miljøet; uten opprydding ville watchlist-/cache-data lekke mellom
+  // testfiler som deler samme jsdom-instans (Vitest workers gjenbruker den).
+  localStorage.clear();
 });

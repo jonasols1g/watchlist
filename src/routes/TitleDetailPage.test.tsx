@@ -76,10 +76,15 @@ describe("TitleDetailPage", () => {
     expect(screen.getByText("8/10")).toBeInTheDocument();
     expect(screen.getByText("Ikke tilgjengelig")).toBeInTheDocument();
     expect(
-      screen.getByRole("img", { name: "Ingen plakat tilgjengelig for Solaris" }),
+      screen.getByRole("img", {
+        name: "Ingen plakat tilgjengelig for Solaris",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Ingen strømmetjenester funnet for din region"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Legg til i watchlist" }),
     ).toBeInTheDocument();
   });
 

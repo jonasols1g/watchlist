@@ -50,12 +50,16 @@ export class InMemoryKeyValueStorage implements KeyValueStorage {
 /**
  * Feature-detection av `localStorage`: selve property-aksessen kan kaste
  * (SecurityError), og en prøveskriving avslører moduser der storage finnes,
- * men avviser all skriving.
+ * men avviser all skriving. Delt mellom cache- og watchlist-lagring (se
+ * `services/storage/watchlistStorage.ts`) — `probeKeyPrefix` skiller kun
+ * probe-nøkkelen mellom navnerom, den faktiske sjekken er identisk.
  */
-function detectLocalStorage(): KeyValueStorage | null {
+export function detectLocalStorage(
+  probeKeyPrefix: string,
+): KeyValueStorage | null {
   try {
     const storage = globalThis.localStorage;
-    const probeKey = `${CACHE_KEY_PREFIX}__probe__`;
+    const probeKey = `${probeKeyPrefix}__probe__`;
     storage.setItem(probeKey, "1");
     storage.removeItem(probeKey);
     return storage;
@@ -94,7 +98,9 @@ export class LocalStorageCacheStore implements CacheStore {
 
   constructor(storage?: KeyValueStorage) {
     this.storage =
-      storage ?? detectLocalStorage() ?? new InMemoryKeyValueStorage();
+      storage ??
+      detectLocalStorage(CACHE_KEY_PREFIX) ??
+      new InMemoryKeyValueStorage();
   }
 
   get<T>(key: string): T | null {
