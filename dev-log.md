@@ -29,7 +29,10 @@ Kort logg over hva som er gjort per dag. Nyeste øverst. Én oppføring per dag 
 - Fase 4 (app-skjelett) implementert via PR #3 med full agent-loop: `dev` → `reviewer` (godkjent uten funn) → `verifier` (grønn CI + drev navigasjon manuelt mot produksjonsbygget, inkl. dyplenke og ukjent sti) → squash-merge. `App.tsx` med `BrowserRouter basename={import.meta.env.BASE_URL}`, `NavBar` og ruter for `/`, `/watchlist`, `/title/:id`, `*`; `MediaProviderContext` koblet til sammensetningsroten i `services/media/index.ts` (`CachingMediaProvider(MockMediaProvider, LocalStorageCacheStore)`).
 - Sidefunn fra `dev` underveis: `setupTests.ts` manglet `afterEach(cleanup)` for Testing Library (usynlig til nå fordi ingen tidligere test rendret flere ganger i samme fil) — fikset. `e2e/smoke.spec.ts` fra fase 1 forventet gammel placeholder-heading — oppdatert til å matche ny `HomePage`.
 
-**Neste:** fase 5 i `dev-tasks.md` (søkeside).
+- Fase 5 (søkeside) implementert via PR #4 med full agent-loop: `dev` → `reviewer` (godkjent uten funn) → `verifier` (grønn CI + drev søk manuelt mot produksjonsbygget: treff, tom-tilstand, klikk→detaljside, submit-only) → squash-merge. `SearchBar` + `useMediaSearch` (statusmaskin idle/loading/success/error, `AbortController` avbryter forrige kall og ved unmount) + `SearchResultsGrid`/`SearchResultCard`. Delte `components/common/{LoadingSpinner,EmptyState,ErrorMessage}` (feilkode→tekst ordrett fra design.md) og `components/media/PosterImage` (begge allerede i architecture.md sin mappestruktur). `HomePage` komponerer alt sammen.
+- Kjent, ikke-blokkerende funn fra `verifier`: `MockMediaProvider` (fase 2) sine `posterUrl`-verdier peker til `images.example.com`, som ikke finnes — gir `console.error` i nettleseren nå som postere faktisk rendres i UI. Ikke en fase 5-regresjon, men bør rettes (f.eks. et ekte plakat-CDN eller data-URI) før fase 6 (detaljside) og senere fasers watchlist-kort viser flere postere.
+
+**Neste:** fase 6 i `dev-tasks.md` (detaljside). Vurder samtidig å rydde opp i `MockMediaProvider`s `posterUrl`-verdier (se funn over) siden fase 6 også rendrer postere.
 
 ## 2026-07-16
 

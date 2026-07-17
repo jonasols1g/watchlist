@@ -12,7 +12,7 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 | 2 — Domenemodell og MockMediaProvider | ✅ Ferdig 2026-07-17 |
 | 3 — Cache-lag | ✅ Ferdig 2026-07-17 |
 | 4 — App-skjelett | ✅ Ferdig 2026-07-17 |
-| 5 — Søkeside | ☐ Ikke startet |
+| 5 — Søkeside | ✅ Ferdig 2026-07-17 |
 | 6 — Detaljside | ☐ Ikke startet |
 | 7 — Watchlist-funksjonalitet | ☐ Ikke startet |
 | 8 — Talesøk | ☐ Ikke startet |
@@ -52,11 +52,11 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 - [x] **Definition of done:** Navigasjon mellom de fire rutene fungerer med tomme placeholder-sider.
 
 ## Fase 5 — Søkeside
-- [ ] Implementer `SearchBar`, `useMediaSearch`, `SearchResultsGrid`, `SearchResultCard`.
-- [ ] Søk trigges kun ved submit (Enter/søkeknapp) — ikke mens man skriver. Nytt submit avbryter pågående kall via `AbortSignal` (også ved unmount), slik at utdaterte responser aldri vises.
-- [ ] Håndter lasting/tom-tilstand/feil-tilstand som beskrevet i [design.md](./design.md), inkl. feilkode-tekstene i [design.md](./design.md#feilmeldinger).
-- [ ] **E2E** (`e2e/search.spec.ts`): søk → resultater vises → klikk på kort navigerer til detaljside. Dekk også tom-tilstand (søk uten treff).
-- [ ] **Definition of done:** Søk mot `MockMediaProvider` viser resultater, klikk navigerer til detaljside.
+- [x] Implementer `SearchBar`, `useMediaSearch`, `SearchResultsGrid`, `SearchResultCard`.
+- [x] Søk trigges kun ved submit (Enter/søkeknapp) — ikke mens man skriver. Nytt submit avbryter pågående kall via `AbortSignal` (også ved unmount), slik at utdaterte responser aldri vises.
+- [x] Håndter lasting/tom-tilstand/feil-tilstand som beskrevet i [design.md](./design.md), inkl. feilkode-tekstene i [design.md](./design.md#feilmeldinger).
+- [x] **E2E** (`e2e/search.spec.ts`): søk → resultater vises → klikk på kort navigerer til detaljside. Dekk også tom-tilstand (søk uten treff).
+- [x] **Definition of done:** Søk mot `MockMediaProvider` viser resultater, klikk navigerer til detaljside.
 
 ## Fase 6 — Detaljside
 - [ ] Implementer `TitleDetailPage`, `useMediaDetails`, `RatingsBadge` (eksplisitt "ikke tilgjengelig" for manglende RT-score), `GenreTags`, `StreamingProvidersList` (tom-tilstand).
