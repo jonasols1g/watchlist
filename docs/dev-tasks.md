@@ -15,7 +15,7 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 | 5 — Søkeside | ✅ Ferdig 2026-07-17 |
 | 6 — Detaljside | ✅ Ferdig 2026-07-17 |
 | 7 — Watchlist-funksjonalitet | ✅ Ferdig 2026-07-17 |
-| 8 — Talesøk | ☐ Ikke startet |
+| 8 — Talesøk | ✅ Ferdig 2026-07-17 |
 | 9 — Polish | ☐ Ikke startet |
 | 10 — Ekte API-integrasjon | ☐ Ikke startet |
 
@@ -70,9 +70,9 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 - [x] **Definition of done:** Legge til, bytte status og fjerne fra watchlist fungerer og overlever en sideoppdatering (persistert i `localStorage`).
 
 ## Fase 8 — Talesøk
-- [ ] Implementer `hooks/useSpeechRecognition.ts` med feature-detection (`window.SpeechRecognition ?? window.webkitSpeechRecognition`) og `lang: 'en-US'` (se [design.md](./design.md#søkeflyt-tekst-og-tale)).
-- [ ] Implementer `VoiceSearchButton`, koble `transcript` (kun `isFinal`-resultat) inn i samme `handleSearch(query)`-flyt som tekstsøk på `HomePage`.
-- [ ] **Definition of done:** Talesøk fungerer i Chrome/Edge; i nettlesere uten støtte vises tydelig fallback og tekstsøk er upåvirket. Enhetstester mocker `window.SpeechRecognition` og dekker både støttet og ikke-støttet nettleser.
+- [x] Implementer `hooks/useSpeechRecognition.ts` med feature-detection (`window.SpeechRecognition ?? window.webkitSpeechRecognition`) og `lang: 'en-US'` (se [design.md](./design.md#søkeflyt-tekst-og-tale)).
+- [x] Implementer `VoiceSearchButton`, koble `transcript` (kun `isFinal`-resultat) inn i samme `handleSearch(query)`-flyt som tekstsøk på `HomePage`.
+- [x] **Definition of done:** Talesøk fungerer i Chrome/Edge; i nettlesere uten støtte vises tydelig fallback og tekstsøk er upåvirket. Enhetstester mocker `window.SpeechRecognition` og dekker både støttet og ikke-støttet nettleser.
 
 **Merk — talesøk dekkes ikke av E2E:** Web Speech API krever ekte mikrofoninput og en gjenkjenningstjeneste hos Google; Playwright kan verken mate inn lyd eller stubbe `SpeechRecognition` meningsfullt utenfra. Talesøk verifiseres derfor med enhetstester (mocket `SpeechRecognition`) pluss manuell testing i Chrome. Det er en reell begrensning i rammeverket, ikke en nedprioritering. Siden talesøk og tekstsøk deler kodepath (`handleSearch(query)`), dekker E2E-testene for tekstsøk alt bortsett fra selve tale-til-tekst-steget.
 

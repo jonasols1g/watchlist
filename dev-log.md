@@ -36,7 +36,9 @@ Kort logg over hva som er gjort per dag. Nyeste øverst. Én oppføring per dag 
 
 - Fase 7 (watchlist-funksjonalitet) implementert via PR #6 med full agent-loop: `dev` → `reviewer` (godkjent uten funn) → `verifier` (grønn CI + drev hele flyten manuelt mot produksjonsbygget: legg til fra søkeresultat → «Planlagt» → bytt status til «Sett» → reload → status beholdt → fjern fra detaljside → reload → tomt) → squash-merge. `WatchlistContext` (`useReducer` med `ADD`/`REMOVE`/`SET_STATUS`, lagrer synkront via en `itemsRef`-wrapper i stedet for `useEffect`, pga. `eslint-plugin-react-hooks`s `set-state-in-effect`-regel — vurdert og godkjent av `reviewer` som et akseptabelt avvik fra docs' illustrative pseudokode) og `watchlistStorage` (type guard-validering, in-memory-fallback, skrivefeil-policy: rydd cache før feilmelding, aldri stille tap). `WatchlistToggleButton` integrert på både `SearchResultCard` og `TitleDetailPage`. `detectLocalStorage` i `LocalStorageCacheStore` generalisert og gjenbrukt.
 
-**Neste:** fase 8 i `dev-tasks.md` (talesøk).
+- Fase 8 (talesøk) implementert via PR #7 med full agent-loop, inkl. én review-runde: `dev` → `reviewer` (endringer kreves: `aria-label="Start talesøk"` på `VoiceSearchButton` kolliderte med Playwrights case-insensitive substreng-matching for `getByRole('button', { name: 'Søk' })`, ga 3 røde E2E-tester i `search.spec.ts`/`watchlist.spec.ts`) → fiks via SendMessage til samme `dev` (aria-label endret til «Start/Stopp talegjenkjenning») → `reviewer` (godkjent) → `verifier` (grønn CI + drev tekstsøk/talesøk-fallback manuelt i ekte Chrome, inkl. en simulert `window.SpeechRecognition` som beviste at et `isFinal`-resultat trigger samme `handleSearch`-flyt som tekstsøk) → squash-merge. `useSpeechRecognition` med feature-detection og `lang: 'en-US'`, `VoiceSearchButton` med tydelig deaktivert fallback. Ingen E2E-spec for talesøk, som spesifisert i `dev-tasks.md` (Web Speech API kan ikke stubbes meningsfullt av Playwright).
+
+**Neste:** fase 9 i `dev-tasks.md` (polish).
 
 ## 2026-07-16
 
