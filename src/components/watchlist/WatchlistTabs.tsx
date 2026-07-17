@@ -35,9 +35,11 @@ export function WatchlistTabs({
       {TAB_ORDER.map((status) => (
         <button
           key={status}
+          id={`watchlist-tab-${status}`}
           type="button"
           role="tab"
           aria-selected={active === status}
+          aria-controls="watchlist-tabpanel"
           onClick={() => {
             onChange(status);
           }}

@@ -46,7 +46,13 @@ export function WatchlistPage() {
         />
       </div>
 
-      <div className="mt-6">
+      <div
+        className="mt-6"
+        role="tabpanel"
+        id="watchlist-tabpanel"
+        aria-labelledby={`watchlist-tab-${activeTab}`}
+        tabIndex={-1}
+      >
         {visibleItems.length === 0 ? (
           <EmptyState message={EMPTY_MESSAGE[activeTab]} action={searchLink} />
         ) : (

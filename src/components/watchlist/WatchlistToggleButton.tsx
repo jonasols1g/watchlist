@@ -13,10 +13,10 @@ const STATUS_LABEL: Record<WatchlistStatus, string> = {
 };
 
 const buttonClassName =
-  "rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-800";
+  "self-start rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-800";
 
 const primaryButtonClassName =
-  "rounded bg-slate-800 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-800";
+  "self-start rounded bg-slate-800 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-800";
 
 /**
  * Legg til/fjern/bytt status for én tittel i watchlisten (se

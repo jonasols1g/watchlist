@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Content-Security-Policy som <meta http-equiv> (GitHub Pages støtter ikke
+      egendefinerte HTTP-headere, se docs/architecture.md#robusthet-og-sikkerhet).
+      Fase 1-9 gjør ingen ekte nettverkskall og laster ingen eksterne
+      ressurser (MockMediaProvider er lokal, plakat-URL-ene i mock-dataene er
+      ikke ekte); CSP-en er derfor låst til 'self'. Fase 10 utvider
+      connect-src/img-src med OMDb-/MOTN-domenene når CompositeMediaProvider
+      tas i bruk.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'"
+    />
     <title>Watchlist</title>
   </head>
   <body>
