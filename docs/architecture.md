@@ -199,12 +199,19 @@ Prisen er at E2E ikke fanger opp at API-kontrakten endrer seg. Det er en aksepte
 export interface SearchOptions { signal?: AbortSignal }
 export interface DetailsOptions { signal?: AbortSignal }
 
+export type MediaProviderErrorCode =
+  'network' | 'not-found' | 'rate-limit' | 'invalid-response' | 'unknown';
+
+// Eksplisitte felt (ikke parameter properties) — tsconfig har `erasableSyntaxOnly: true`,
+// som forbyr TS-syntaks med runtime-semantikk.
 export class MediaProviderError extends Error {
-  constructor(
-    message: string,
-    public code: 'network' | 'not-found' | 'rate-limit' | 'invalid-response' | 'unknown',
-    public cause?: unknown,
-  ) { super(message); }
+  readonly code: MediaProviderErrorCode;
+
+  constructor(message: string, code: MediaProviderErrorCode, cause?: unknown) {
+    super(message, { cause });
+    this.name = 'MediaProviderError';
+    this.code = code;
+  }
 }
 
 export interface MediaProvider {

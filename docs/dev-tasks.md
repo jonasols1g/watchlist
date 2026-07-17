@@ -9,7 +9,7 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 | Fase | Status |
 |---|---|
 | 1 — Prosjektoppsett | ✅ Ferdig 2026-07-17 |
-| 2 — Domenemodell og MockMediaProvider | ☐ Ikke startet |
+| 2 — Domenemodell og MockMediaProvider | ✅ Ferdig 2026-07-17 |
 | 3 — Cache-lag | ☐ Ikke startet |
 | 4 — App-skjelett | ☐ Ikke startet |
 | 5 — Søkeside | ☐ Ikke startet |
@@ -34,11 +34,11 @@ Faseinndelt rekkefølge for implementasjonen. Hver fase bygger på strukturen i 
 - [x] **Definition of done:** `npm run dev` starter en tom app, `npm test` og `npm run test:e2e` kjører (selv uten tester ennå), lint kjører uten feil, CI er grønn på push.
 
 ## Fase 2 — Domenemodell, MediaProvider-interface og MockMediaProvider
-- [ ] Opprett `types/media.ts`, `types/watchlist.ts`, `types/cache.ts`.
-- [ ] Opprett `services/media/MediaProvider.ts` (interface + `MediaProviderError`).
-- [ ] Opprett `services/media/providers/MockMediaProvider.ts` med noen faste titler (inkl. minst én uten `rottenTomatoesScore` og én uten streaming-tilbud, for å teste null-håndtering tidlig).
-- [ ] Opprett `src/test/fixtures/media.fixtures.ts` og `src/test/mocks/createMockMediaProvider.ts`.
-- [ ] **Definition of done:** `MockMediaProvider.search()` og `.getDetails()` fungerer og har enhetstester.
+- [x] Opprett `types/media.ts`, `types/watchlist.ts`, `types/cache.ts`.
+- [x] Opprett `services/media/MediaProvider.ts` (interface + `MediaProviderError`).
+- [x] Opprett `services/media/providers/MockMediaProvider.ts` med noen faste titler (inkl. minst én uten `rottenTomatoesScore` og én uten streaming-tilbud, for å teste null-håndtering tidlig).
+- [x] Opprett `src/test/fixtures/media.fixtures.ts` og `src/test/mocks/createMockMediaProvider.ts`.
+- [x] **Definition of done:** `MockMediaProvider.search()` og `.getDetails()` fungerer og har enhetstester.
 
 ## Fase 3 — Cache-lag
 - [ ] Opprett `services/cache/CacheStore.ts`, `LocalStorageCacheStore.ts`, `cacheKeys.ts`, `utils/normalizeQuery.ts`, `utils/storageKeys.ts`.

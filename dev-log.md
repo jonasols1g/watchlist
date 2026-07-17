@@ -21,7 +21,10 @@ Kort logg over hva som er gjort per dag. Nyeste øverst. Én oppføring per dag 
 
 - Strammet inn agent-arbeidsflyten etter en gjennomgang: ny `CLAUDE.md` i rota dokumenterer orkestreringen (spawn-rekkefølge, review-runder via SendMessage til samme agent, eskalering til hovedsamtalen ved uenighet etter to runder, merge og etterarbeid). `reviewer` sjekker nå `gh pr checks` først (rød CI = blokkerende funn) og skal ta eksplisitt stilling til bestridte funn. `verifier` bruker grønn CI som bevis for lint/tester/E2E/bygg og bruker lokal tid på å drive den berørte flyten manuelt mot preview-bygget (nå obligatorisk, ikke «ved behov»). `dev` fikk verktøysavgrensning i frontmatter og krav om ordrett testresultat i rapporten. Både `dev` og `verifier` avslutter alltid på `main`, siden arbeidskatalogen deles.
 
-**Neste:** fase 2 i `dev-tasks.md` (domenemodell, `MediaProvider`-interface og `MockMediaProvider`).
+- Fase 2 (domenemodell, `MediaProvider`-interface og `MockMediaProvider`) implementert via PR #1 med full agent-loop: `dev` → `reviewer` (godkjent uten funn) → `verifier` (grønn CI + drev provider-API-et manuelt mot produksjonsbygget, 11/11 sjekker) → squash-merge. Typene ordrett fra `data-model.md`; mock-katalog med 5 titler inkl. null-tilfellene (Solaris uten RT-score, Oppenheimer uten streaming). 20 enhetstester.
+- Docs-avvik funnet av `dev`: `MediaProviderError`-snutten i `architecture.md` brukte parameter properties, som `erasableSyntaxOnly: true` i tsconfig forbyr. Implementert med eksplisitte felt (identisk offentlig flate); snutten i docs oppdatert til å matche.
+
+**Neste:** fase 3 i `dev-tasks.md` (cache-lag).
 
 ## 2026-07-16
 
