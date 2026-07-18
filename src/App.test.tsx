@@ -31,6 +31,20 @@ vi.mock("./services/media", () => ({
   },
 }));
 
+// `App` wrappes med `AuthProvider` (DB-migrering issue B), som importerer
+// `./services/auth/firebaseClient` og kaller `onAuthStateChanged`/
+// `signInAnonymously` fra `firebase/auth`. `firebaseClient.ts` initialiserer
+// ekte Firebase-klienter på modulnivå (`getAuth(firebaseApp)`) — uten
+// `VITE_FIREBASE_*` satt (som i CI, se .github/workflows/ci.yml) kaster
+// dette `auth/invalid-api-key` og feller hele testfila. Denne modultesten
+// skal aldri gjøre ekte Firebase-kall, så begge modulene mockes til enkle
+// testdobler, tilsvarende mønsteret i AuthContext.test.tsx.
+vi.mock("./services/auth/firebaseClient", () => ({ auth: {} }));
+vi.mock("firebase/auth", () => ({
+  onAuthStateChanged: () => () => {},
+  signInAnonymously: () => Promise.resolve(),
+}));
+
 describe("App", () => {
   beforeEach(() => {
     window.history.pushState({}, "", "/");

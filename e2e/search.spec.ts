@@ -1,13 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { registerApiStubs } from "./fixtures/apiStubs.ts";
+import { registerFirebaseAuthStub } from "./fixtures/firebaseAuthStub.ts";
 
 // Fase 10: appen kjører nå mot `CompositeMediaProvider` (ekte OMDb-/MOTN-kall)
 // i stedet for `MockMediaProvider`. Dette `beforeEach`-kallet er eneste
 // endring i denne filen — det kobler inn `page.route`-stubbing (se
 // e2e/fixtures/apiStubs.ts) slik at testene aldri gjør ekte nettverkskall.
 // Selve testene under er uendret fra fase 5.
+// DB-migrering issue B: se e2e/fixtures/firebaseAuthStub.ts — alle sider
+// kaller nå AuthContext ved mount, uavhengig av rute.
 test.beforeEach(async ({ page }) => {
   await registerApiStubs(page);
+  await registerFirebaseAuthStub(page);
 });
 
 // Søk kjører mot en stubbet OMDb (se e2e/fixtures/apiStubs.ts) — ingen ekte

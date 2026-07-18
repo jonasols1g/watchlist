@@ -9,12 +9,16 @@ import { initializeFirestore, type Firestore } from "firebase/firestore";
  * `import.meta.env.VITE_FIREBASE_*` (se `.env.example`), samme mønster som
  * `services/media/index.ts` brukes for `MediaProvider`-sammensetningen.
  *
- * Denne filen initialiserer klientene, men importeres ikke fra noe sted i
- * produksjonskoden ennå — det er jobben til `AuthContext` (issue B) og
- * `FirestoreWatchlistStorage` (issue C). Ingen bruker-synlig endring i denne
- * issuen. Miljøvariablene er tomme frem til et ekte Firebase-prosjekt er
- * opprettet (manuell forutsetning, se issuen); `initializeApp` med tomme
- * felter kaster ikke ved import, kun ved faktisk bruk av Auth/Firestore.
+ * OBS — `getAuth(firebaseApp)` under kaster synkront (`auth/invalid-api-key`)
+ * når `firebaseConfig` er tom eller ugyldig, selv om `initializeApp` i seg
+ * selv ikke gjør det. Denne modulen må derfor aldri importeres, verken
+ * direkte eller transitivt, uten at ekte `VITE_FIREBASE_*`-verdier er satt i
+ * miljøet den kjører i (se `.env.example`, `.github/workflows/ci.yml` og
+ * `docs/architecture.md`) — det gjelder både enhetstester (mock modulen,
+ * ikke bare `firebase/auth`, se `AuthContext.test.tsx`/`App.test.tsx`) og
+ * enhver kjørende bygg av appen selv (E2E, GitHub Pages-publisering).
+ * `AuthContext` (issue B) importerer denne filen ubetinget fra `App.tsx`,
+ * så siden issue B er den nå reelt i bruk i produksjonskoden.
  *
  * `experimentalForceLongPolling: true`: Firestores WebChannel-transport
  * holder som standard responser åpne i påvente av mer data fra backend

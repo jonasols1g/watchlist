@@ -41,8 +41,24 @@ jobs:
       # webServer i playwright.config.ts bygger og starter vite preview mot
       # produksjonsbygget. E2E kjører alltid mot stubbet nettverk (page.route,
       # se e2e/fixtures/apiStubs.ts) — aldri mot ekte OMDb-/MOTN-kall, så
-      # API-nøkler trengs ikke her (se docs/architecture.md#teststrategi).
+      # de nøklene trengs ikke her (se docs/architecture.md#teststrategi).
+      # VITE_FIREBASE_*, derimot, må være satt: `firebaseClient.ts` kaller
+      # `getAuth(firebaseApp)` synkront på modulnivå (DB-migrering issue B,
+      # `AuthContext`/`App.tsx`), og kaster `auth/invalid-api-key` ved tomt/
+      # ugyldig config — det ville feilet appens mount før noen side i det
+      # hele tatt rendres. Selve auth-*kallet* (signInAnonymously) treffer
+      # fortsatt kun stubbet trafikk her, siden ingen E2E-spec i denne
+      # runden asserterer på Firestore-data — se
+      # docs/plans/watchlist-database-migrering.md issue C for når
+      # Firestore-stubbing legges til apiStubs.ts.
       - run: npx playwright test
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -74,14 +90,29 @@ jobs:
       - run: npm ci
       # API-nøklene bakes inn i klientbundelen ved build (VITE_-prefiks
       # kreves for at Vite skal eksponere dem, se docs/architecture.md#kjente-
-      # forutsetninger-og-risikoer). Secretsene er ikke lagt inn i
-      # repo-innstillingene ennå — inntil de er det, bygger appen med tomme
-      # nøkler (bevisst, se docs/dev-tasks.md fase 10); dette skal aldri
-      # brekke selve bygget/publiseringen.
+      # forutsetninger-og-risikoer). VITE_OMDB_API_KEY/VITE_MOTN_API_KEY kan
+      # i prinsippet mangle uten at selve `vite build`-steget feiler — appen
+      # ville da bare degradert til synlige, men ikke-fatale feilmeldinger
+      # ved faktisk API-bruk i nettleseren (bevisst, se docs/dev-tasks.md
+      # fase 10). VITE_FIREBASE_* er derimot ikke valgfrie på samme måte:
+      # `firebaseClient.ts` kaller `getAuth(firebaseApp)` synkront på
+      # modulnivå (DB-migrering issue B), som kaster `auth/invalid-api-key`
+      # med tomt/ugyldig config — det ville krasjet hele React-treet for
+      # ekte besøkende idet den publiserte bundelen laster i nettleseren
+      # (selve `vite build`-steget her feiler ikke, siden ingen nettleser-JS
+      # kjøres under bygging — krasjet skjer først når bundelen kjører
+      # client-side). Alle seks Firebase-secrets er derfor satt her på lik
+      # linje med OMDb/MOTN.
       - run: npm run build
         env:
           VITE_OMDB_API_KEY: ${{ secrets.VITE_OMDB_API_KEY }}
           VITE_MOTN_API_KEY: ${{ secrets.VITE_MOTN_API_KEY }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

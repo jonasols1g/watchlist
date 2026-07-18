@@ -1,11 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { registerApiStubs } from "./fixtures/apiStubs.ts";
+import { registerFirebaseAuthStub } from "./fixtures/firebaseAuthStub.ts";
 
 // Fase 10: se e2e/search.spec.ts for hvorfor dette `beforeEach`-kallet er
 // eneste endring i denne filen (kobler inn page.route-stubbing av
 // OMDb/MOTN, selve testen er uendret fra fase 7).
+// DB-migrering issue B: se e2e/fixtures/firebaseAuthStub.ts — alle sider
+// kaller nå AuthContext ved mount, uavhengig av rute.
 test.beforeEach(async ({ page }) => {
   await registerApiStubs(page);
+  await registerFirebaseAuthStub(page);
 });
 
 // Watchlist kjører mot en stubbet OMDb (se e2e/fixtures/apiStubs.ts) og
