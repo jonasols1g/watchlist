@@ -16,7 +16,11 @@ import { useMediaSearch } from "../hooks/useMediaSearch";
  * og søkefeltet vertikalt i en egen sone. Så snart et søk er utført (uansett
  * utfall) vises feltet i normal, topp-ankret rekkefølge over resultatene —
  * nøyaktig samme `useMediaSearch`-tilstand som før, kun ulik visuell
- * plassering avhengig av `status`.
+ * plassering avhengig av `status`. Søkeknappen og mikrofonknappen
+ * (`SearchBar`s `trailingAction`) er derimot alltid fast plassert nederst i
+ * viewporten, rett over `NavBar`, uavhengig av `centered`/`status` (se
+ * SearchBar.tsx) — `pb-28` under holder resultatgridet unna den raden,
+ * samme mønster/verdi som brukes for CTA-en i TitleDetailPage.tsx.
  *
  * `<h1>`-en er `sr-only`: skjermbildet viser ingen synlig "Søk"-tekst på
  * selve siden (kun CineFind-wordmarken og fanenavnet i bunn-navigasjonen) —
@@ -33,7 +37,7 @@ export function HomePage() {
   }
 
   return (
-    <div className={`flex flex-col ${isIdle ? "min-h-[65vh]" : ""}`}>
+    <div className={`flex flex-col pb-28 ${isIdle ? "min-h-[65vh]" : ""}`}>
       <h1 className="sr-only">Søk</h1>
 
       <SearchBar

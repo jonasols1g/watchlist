@@ -15,9 +15,10 @@ export interface SearchBarProps {
    */
   heading?: ReactNode;
   /**
-   * Rendres ved siden av søkeknappen i bunn-raden (`VoiceSearchButton`) —
-   * en DOM-etterkommer av dette skjemaet, men et eget `type="button"`, så
-   * den utløser aldri søke-submitten.
+   * Rendres ved siden av søkeknappen i knapperaden som er fast plassert
+   * nederst i viewporten, rett over `NavBar` (`VoiceSearchButton`) — en
+   * DOM-etterkommer av dette skjemaet, men et eget `type="button"`, så den
+   * utløser aldri søke-submitten.
    */
   trailingAction?: ReactNode;
   /**
@@ -83,14 +84,27 @@ export function SearchBar({
           />
         </div>
       </div>
-      <div className="flex items-center gap-3 pt-6">
-        <button
-          type="submit"
-          className="bg-brand-gradient rounded-2xl px-4 py-3.5 text-[15px] font-bold text-slate-900 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white flex-1"
-        >
-          Søk
-        </button>
-        {trailingAction}
+      {/*
+        Søkeknappen og mikrofonknappen (`trailingAction`) er fast plassert
+        over bunn-fanebaren (78px, se components/layout/NavBar.tsx), med et
+        nedtonende gradient bak for å skille dem fra innholdet som scroller
+        under — samme mønster som CTA-en i TitleDetailPage.tsx. Raden er
+        fortsatt en DOM-etterkommer av <form>, så submit (Enter i feltet
+        eller klikk på "Søk") er upåvirket av at raden er posisjonert fast
+        fremfor i normal dokumentflyt (se
+        docs/design.md#søkeflyt-tekst-og-tale). Vises uavhengig av
+        `centered`/søkestatus, iht. docs/design-spec/screenshots/01-sok.png.
+      */}
+      <div className="fixed inset-x-0 bottom-[78px] z-10 bg-gradient-to-t from-[oklch(0.13_0.03_60)] from-60% to-transparent pt-6">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 pb-4">
+          <button
+            type="submit"
+            className="bg-brand-gradient rounded-2xl px-4 py-3.5 text-[15px] font-bold text-slate-900 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white flex-1"
+          >
+            Søk
+          </button>
+          {trailingAction}
+        </div>
       </div>
     </form>
   );

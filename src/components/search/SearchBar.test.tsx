@@ -54,4 +54,28 @@ describe("SearchBar", () => {
 
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it.each([{ centered: true }, { centered: false }])(
+    "plasserer søkeknappen og trailingAction fast nederst i viewporten, rett over NavBar, uansett centered=$centered (issue #28)",
+    ({ centered }) => {
+      render(
+        <SearchBar
+          onSubmit={vi.fn()}
+          centered={centered}
+          trailingAction={<button type="button">Mikrofon</button>}
+        />,
+      );
+
+      const button = screen.getByRole("button", { name: "Søk" });
+      const trailingAction = screen.getByRole("button", { name: "Mikrofon" });
+      const buttonRow = button.parentElement;
+      const fixedContainer = buttonRow?.parentElement;
+
+      // Både søkeknappen og trailingAction (mikrofonknappen) skal ligge i
+      // samme faste bunn-rad — se docs/design.md#søkeflyt-tekst-og-tale.
+      expect(buttonRow).toContainElement(trailingAction);
+      expect(fixedContainer?.className).toContain("fixed");
+      expect(fixedContainer?.className).toContain("bottom-[78px]");
+    },
+  );
 });
