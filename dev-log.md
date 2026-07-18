@@ -21,7 +21,10 @@ Kort logg over hva som er gjort per dag. Nyeste øverst. Én oppføring per dag 
 - Endelig verifisering (`verifier`, mot `https://jonasols1g.github.io/watchlist/`): søk på «Matrix» ga ekte OMDb-treff, detaljside for `tt0133093` viste ekte IMDb-score (8.7), RT-score (83 %), sjangre og MOTN-strømmetilbud (Apple TV, Prime Video), og en tittel uten strømmetilbud i Norge viste korrekt tom-tilstanden «Ingen strømmetjenester funnet for din region». Dyplenke direkte til `/title/tt0133093` + `page.reload()` bekreftet på nytt i produksjon (fase 9s siste DoD-punkt).
 - Fase 9 og fase 10 er dermed begge hakket av som ferdige i `docs/dev-tasks.md`.
 
-**Neste:** Ingen åpne faser. Mulige videre steg: overvåke MOTN-kvoten (100 kall/døgn) i faktisk bruk, og vurdere om noe mer skal bygges ut over de 11 fasene i `dev-tasks.md`.
+- **Oppgavesporing flyttet til GitHub Projects.** `docs/dev-tasks.md` arkivert til `docs/archive/dev-tasks.md` (alle 11 faser ferdige, ingen flere oppgaver å spore der). Fase 11s liste over bevisste pixel-avvik flyttet til `docs/design.md` før arkivering. Agent-arbeidsflyten i `CLAUDE.md` og agent-instruksene for `dev`/`feature-planner`/`reviewer` skrevet om til å bruke GitHub-issues + boardets `Status`-felt (Backlog/Ready/In progress/In review/Done) i stedet for avhuking i `dev-tasks.md`. `dev-log.md` uendret — føres fortsatt som før.
+- Flyten testet ende-til-ende på en reell, liten oppgave (issue #14 → PR #15, fjernet en utdatert "faseplan"-referanse fra rot-`README.md`): `dev` → `reviewer` (godkjent) → `verifier`. Verifier fant et reelt problem reviewer hadde oversett: den nye README-lenken pekte til GitHub-prosjektet, som var **privat** mens repoet er offentlig — ekstern lenke ga 404. Bruker valgte å gjøre prosjektet offentlig (`gh project edit 2 --owner jonasols1g --visibility PUBLIC`) fremfor å fjerne lenken; verifier bekreftet fiksen i en ny runde (HTTP 200 uautentisert), deretter squash-merge og issue lukket automatisk via `Closes #14`.
+
+**Neste:** Ingen åpne faser. Mulige videre steg: overvåke MOTN-kvoten (100 kall/døgn) i faktisk bruk, og vurdere om noe mer skal bygges ut — nye idéer spores nå som issues i [GitHub-prosjektet](https://github.com/users/jonasols1g/projects/2) fremfor i `docs/`.
 
 ## 2026-07-17
 
