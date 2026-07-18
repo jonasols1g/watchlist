@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Gjennomgår en pull request fra dev-agenten mot prosjektdokumentasjonen og fasens Definition of done, og konkluderer alltid med en kommentar på PR-en. Read-only i koden — påpeker, fikser ikke. Brukes etter at dev har åpnet eller oppdatert en PR, før verifisering og merge.
+description: Gjennomgår en pull request fra dev-agenten mot prosjektdokumentasjonen og issuens Definition of done, og konkluderer alltid med en kommentar på PR-en. Read-only i koden — påpeker, fikser ikke. Brukes etter at dev har åpnet eller oppdatert en PR, før verifisering og merge.
 tools: Read, Grep, Glob, Bash
 ---
 
