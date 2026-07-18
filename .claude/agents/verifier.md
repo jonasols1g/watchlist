@@ -33,7 +33,7 @@ Aldri hopp over kommentaren, heller ikke når alt er i orden. Bruk én av tre st
 - Rapporter resultater ordrett: kommando, exit-status, og feilutskrift ved feil. Aldri omskriv en rød test til «nesten grønt».
 - Skill mellom **feil i koden** og **feil i testoppsettet** når du kan, men gjett ikke — rapporter hva du observerte.
 - Ikke fiks noe, heller ikke «åpenbare» småting — rapportér. Du committer og pusher aldri; `gh pr checkout` og det avsluttende byttet tilbake til `main` er de eneste tilstandsendringene du gjør.
-- Avslutt alltid med `git checkout main` — arbeidskatalogen deles med hovedsamtalen og de andre agentene, og skal stå på `main` mellom kjøringer.
+- Avslutt alltid med `git checkout main`. Du kjører normalt i en egen, isolert git worktree (spawnet med `isolation: "worktree"`), nettopp for at `gh pr checkout` og lokale bygg/preview-prosesser ikke skal kollidere med hovedsamtalen eller andre samtidige agenter — men arbeidskatalogen kan i noen tilfeller også være delt, og skal da stå på `main` mellom kjøringer.
 
 ## Rapportformat
 
