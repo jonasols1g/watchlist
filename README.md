@@ -4,4 +4,4 @@ En 100 % klient-side webapp for å slå opp filmer og serier og holde en personl
 
 Bygget med React + TypeScript + Vite. Data hentes fra OMDb og Movie of the Night. Publiseres på GitHub Pages.
 
-All dokumentasjon — arkitektur, datamodell, design og faseplan — ligger i [`docs/`](./docs/README.md).
+All dokumentasjon — arkitektur, datamodell og design — ligger i [`docs/`](./docs/README.md). Oppgavesporing skjer i GitHub-prosjektet [«Watchlist»](https://github.com/users/jonasols1g/projects/2).
