@@ -5,6 +5,7 @@ import type { WatchlistStorage } from "../services/storage/WatchlistRemoteStorag
 import { createMediaSummary } from "../test/fixtures/media.fixtures";
 import { createWatchlistItem } from "../test/fixtures/watchlist.fixtures";
 import { createMockWatchlistStorage } from "../test/mocks/createMockWatchlistStorage";
+import type { WatchlistItem } from "../types/watchlist";
 import { WatchlistProvider, useWatchlist } from "./WatchlistContext";
 
 /**
@@ -321,6 +322,111 @@ describe("WatchlistContext — Firestore-hydrering", () => {
     await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
     expect(result.current.isLoading).toBe(false);
   });
+
+  // Reviewer-funn på PR #23: den initiale hentingen overskrev ubetinget
+  // lokal state når den resolverte, uavhengig av handlinger brukeren gjorde
+  // mens hentingen var underveis — en addToWatchlist rett etter mount kunne
+  // dermed synes å forsvinne idet et eldre/tomt hentingsresultat landet.
+  it("bevarer en handling gjort mens den første Firestore-hentingen er underveis, i stedet for å bli overskrevet av hentingsresultatet", async () => {
+    const deferredLoad = createDeferred<WatchlistItem[]>();
+    const load = vi.fn().mockReturnValue(deferredLoad.promise);
+    const upsert = vi.fn().mockResolvedValue(undefined);
+    const storage = createMockWatchlistStorage({ load, upsert });
+
+    const { result } = renderHook(() => useWatchlist(), {
+      wrapper: wrapperWithStorage(storage, "user-1"),
+    });
+
+    expect(result.current.isLoading).toBe(true);
+
+    // Brukeren rekker å legge til en tittel mens den initiale hentingen
+    // fortsatt er underveis (optimistisk oppdatering skjer umiddelbart,
+    // uavhengig av hydrering).
+    act(() => {
+      result.current.addToWatchlist(createMediaSummary({ id: "mock-movie-1" }));
+    });
+    expect(result.current.isInWatchlist("mock-movie-1")).toBe(true);
+
+    // Hentingen resolver med et datasett som *ikke* inneholder tittelen
+    // (f.eks. fordi Firestore-skrivingen ikke hadde rukket å committes da
+    // lesingen startet) — den skal likevel ikke forsvinne fra UI-et.
+    await act(async () => {
+      deferredLoad.resolve([]);
+      await deferredLoad.promise;
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isInWatchlist("mock-movie-1")).toBe(true);
+    expect(result.current.items).toHaveLength(1);
+  });
+
+  it("bevarer en handling utført under en påfølgende 'online'-gjenhenting på samme måte", async () => {
+    const load = vi.fn().mockResolvedValue([]);
+    const upsert = vi.fn().mockResolvedValue(undefined);
+    const storage = createMockWatchlistStorage({ load, upsert });
+
+    const { result } = renderHook(() => useWatchlist(), {
+      wrapper: wrapperWithStorage(storage, "user-1"),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const deferredReload = createDeferred<WatchlistItem[]>();
+    load.mockReturnValueOnce(deferredReload.promise);
+
+    act(() => {
+      window.dispatchEvent(new Event("online"));
+    });
+    await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
+
+    act(() => {
+      result.current.addToWatchlist(createMediaSummary({ id: "mock-movie-2" }));
+    });
+    expect(result.current.isInWatchlist("mock-movie-2")).toBe(true);
+
+    await act(async () => {
+      deferredReload.resolve([]);
+      await deferredReload.promise;
+    });
+
+    expect(result.current.isInWatchlist("mock-movie-2")).toBe(true);
+  });
+
+  // Dypere variant av samme race: en handling gjort under en pågående
+  // henting, hvis EGEN Firestore-skriving feiler (rulles tilbake) *før*
+  // hentingen selv rekker å resolve — hentingen skal ikke "gjøre om"
+  // handlingen igjen når den senere spiller av den (nå ugyldige) køen.
+  it("gjør ikke om en handling som allerede er rullet tilbake, når hentingen den ble utført under senere resolver", async () => {
+    const deferredLoad = createDeferred<WatchlistItem[]>();
+    const load = vi.fn().mockReturnValue(deferredLoad.promise);
+    const upsert = vi.fn().mockRejectedValue(new Error("nettverksfeil"));
+    const storage = createMockWatchlistStorage({ load, upsert });
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = renderHook(() => useWatchlist(), {
+      wrapper: wrapperWithStorage(storage, "user-1"),
+    });
+
+    act(() => {
+      result.current.addToWatchlist(createMediaSummary({ id: "mock-movie-1" }));
+    });
+    expect(result.current.isInWatchlist("mock-movie-1")).toBe(true);
+
+    // Handlingens egen skriving feiler og rulles tilbake — *mens* den
+    // initiale hentingen fortsatt er underveis.
+    await waitFor(() => expect(result.current.isInWatchlist("mock-movie-1")).toBe(false));
+
+    // Hentingen resolverer først etterpå.
+    await act(async () => {
+      deferredLoad.resolve([]);
+      await deferredLoad.promise;
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    // Tittelen skal forbli borte — ikke gjenoppstå fra den avspilte køen.
+    expect(result.current.isInWatchlist("mock-movie-1")).toBe(false);
+
+    errorSpy.mockRestore();
+  });
 });
 
 describe("WatchlistContext — skriving mot Firestore (userId satt)", () => {
@@ -427,6 +533,92 @@ describe("WatchlistContext — skriving mot Firestore (userId satt)", () => {
     await waitFor(() => expect(result.current.items).toHaveLength(0));
     expect(result.current.saveError).toBe(true);
     expect(result.current.isInWatchlist("mock-movie-1")).toBe(false);
+
+    errorSpy.mockRestore();
+  });
+
+  // Reviewer-funn på PR #23: rollback brukte et globalt snapshot tatt ved
+  // kalltidspunktet for den feilende handlingen, som slettet enhver senere,
+  // uavhengig, vellykket handling fra visningen (f.eks. legg til A, deretter
+  // legg til B rett etter — feiler As skriving etter at B allerede har
+  // lykkes, forsvant B også).
+  it("ruller kun tilbake den feilende handlingens egen effekt — en senere, uavhengig, vellykket handling forblir", async () => {
+    const deferredA = createDeferred<void>();
+    const upsert = vi.fn((_uid: string, item: { mediaId: string }) =>
+      item.mediaId === "mock-movie-A" ? deferredA.promise : Promise.resolve(),
+    );
+    const storage = createMockWatchlistStorage({ upsert });
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = renderHook(() => useWatchlist(), {
+      wrapper: wrapperWithStorage(storage, "user-1"),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    // A legges til først — skrivingen henger (deferredA er ikke løst ennå).
+    act(() => {
+      result.current.addToWatchlist(createMediaSummary({ id: "mock-movie-A" }));
+    });
+
+    // B legges til rett etter — dens skriving lykkes uavhengig av A.
+    await act(async () => {
+      result.current.addToWatchlist(createMediaSummary({ id: "mock-movie-B" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.isInWatchlist("mock-movie-A")).toBe(true);
+    expect(result.current.isInWatchlist("mock-movie-B")).toBe(true);
+
+    // As skriving feiler *etter* at B allerede har lykkes.
+    await act(async () => {
+      deferredA.reject(new Error("nettverksfeil"));
+      await deferredA.promise.catch(() => undefined);
+    });
+
+    await waitFor(() =>
+      expect(result.current.isInWatchlist("mock-movie-A")).toBe(false),
+    );
+    // B skal forbli upåvirket av As rollback.
+    expect(result.current.isInWatchlist("mock-movie-B")).toBe(true);
+    expect(result.current.saveError).toBe(true);
+
+    errorSpy.mockRestore();
+  });
+
+  it("ruller ikke tilbake et element som allerede fantes, når en idempotent (no-op) ADD feiler", async () => {
+    const upsert = vi
+      .fn()
+      .mockResolvedValueOnce(undefined) // Første, ekte ADD lykkes.
+      .mockRejectedValueOnce(new Error("nettverksfeil")); // Andre, no-op-ADD feiler.
+    const storage = createMockWatchlistStorage({ upsert });
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = renderHook(() => useWatchlist(), {
+      wrapper: wrapperWithStorage(storage, "user-1"),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const media = createMediaSummary({ id: "mock-movie-1" });
+    act(() => {
+      result.current.addToWatchlist(media);
+    });
+    await waitFor(() => expect(upsert).toHaveBeenCalledTimes(1));
+
+    // Legger til samme tittel på nytt — reduceren er idempotent (ingen
+    // faktisk endring), men `applyAction` sender likevel skrivingen, som nå
+    // feiler.
+    await act(async () => {
+      result.current.addToWatchlist(media);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(result.current.saveError).toBe(true));
+    // Tittelen fantes fra før denne (no-op-)handlingen — rollback skal ikke
+    // fjerne den.
+    expect(result.current.isInWatchlist("mock-movie-1")).toBe(true);
+    expect(result.current.items).toHaveLength(1);
 
     errorSpy.mockRestore();
   });

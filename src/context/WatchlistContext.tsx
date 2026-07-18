@@ -58,6 +58,128 @@ export function watchlistReducer(
   }
 }
 
+/** En ren funksjon som anvender/reverserer nøyaktig én handlings egen effekt
+ * på et hvilket som helst gitt datasett — brukt i stedet for å
+ * erstatte/gjenopprette hele arrayen med et gammelt snapshot, slik at
+ * senere, uavhengige handlinger på andre titler aldri klippes bort (se
+ * PR #23-reviewen). */
+type ItemsPatch = (items: WatchlistItem[]) => WatchlistItem[];
+
+/**
+ * Beregner en presis "angre"-patch for `action`, gitt tilstanden rett *før*
+ * den ble anvendt (`before`). Brukes ved feilet Firestore-skriving: i
+ * stedet for å rulle hele tilstanden tilbake til `before` (som ville slettet
+ * enhver annen, uavhengig handling som har lykkes i mellomtiden), reverserer
+ * denne patchen kun `action`s egen effekt på tilstanden slik den faktisk ser
+ * ut *nå* (på anvendelsestidspunktet for patchen, ikke på kalltidspunktet).
+ */
+function computeUndoPatch(
+  action: WatchlistAction,
+  before: WatchlistItem[],
+): ItemsPatch {
+  switch (action.type) {
+    case "ADD": {
+      const existedBefore = before.some(
+        (item) => item.mediaId === action.item.mediaId,
+      );
+      if (existedBefore) {
+        // Idempotent no-op-ADD (tittelen fantes allerede) — denne
+        // handlingen la ikke faktisk til noe, så det er ingenting å angre.
+        return (items) => items;
+      }
+      return (items) =>
+        items.filter((item) => item.mediaId !== action.item.mediaId);
+    }
+
+    case "REMOVE": {
+      const removedItem = before.find(
+        (item) => item.mediaId === action.mediaId,
+      );
+      if (removedItem === undefined) {
+        // Fantes ikke fra før (no-op-REMOVE) — ingenting å gjenopprette.
+        return (items) => items;
+      }
+      return (items) =>
+        items.some((item) => item.mediaId === removedItem.mediaId)
+          ? items
+          : [...items, removedItem];
+    }
+
+    case "SET_STATUS": {
+      const previousItem = before.find(
+        (item) => item.mediaId === action.mediaId,
+      );
+      if (previousItem === undefined) {
+        return (items) => items;
+      }
+      return (items) =>
+        items.map((item) =>
+          item.mediaId === action.mediaId
+            ? {
+                ...item,
+                status: previousItem.status,
+                watchedAt: previousItem.watchedAt,
+              }
+            : item,
+        );
+    }
+
+    default:
+      return (items) => items;
+  }
+}
+
+/**
+ * Beregner en presis "gjør om"-patch for `action`, gitt tilstanden rett
+ * *etter* at den ble anvendt (`after`). Brukes til å spille av handlinger
+ * som ble utført mens en Firestore-henting var underveis, oppå selve
+ * hentingsresultatet — i stedet for at hentingen ubetinget overskriver dem
+ * (se PR #23-reviewen). Bruker det allerede beregnede `after`-datasettet
+ * (ikke reduceren på nytt) slik at f.eks. `watchedAt`-tidsstempler forblir
+ * nøyaktig de samme som da handlingen faktisk skjedde.
+ */
+function computeRedoPatch(
+  action: WatchlistAction,
+  after: WatchlistItem[],
+): ItemsPatch {
+  switch (action.type) {
+    case "ADD": {
+      const addedItem = action.item;
+      return (items) =>
+        items.some((item) => item.mediaId === addedItem.mediaId)
+          ? items
+          : [...items, addedItem];
+    }
+
+    case "REMOVE": {
+      const { mediaId } = action;
+      return (items) => items.filter((item) => item.mediaId !== mediaId);
+    }
+
+    case "SET_STATUS": {
+      const updatedItem = after.find(
+        (item) => item.mediaId === action.mediaId,
+      );
+      if (updatedItem === undefined) {
+        return (items) => items;
+      }
+      return (items) =>
+        items.map((item) =>
+          item.mediaId === action.mediaId
+            ? {
+                ...item,
+                status: updatedItem.status,
+                watchedAt: updatedItem.watchedAt,
+              }
+            : item,
+        );
+    }
+
+    default:
+      return (items) => items;
+  }
+}
+
 export interface WatchlistContextValue {
   items: WatchlistItem[];
   addToWatchlist: (media: MediaSummary) => void;
@@ -115,8 +237,17 @@ export interface WatchlistProviderProps {
  *    beregner neste tilstand og den settes umiddelbart (optimistic update).
  * 2. Neste tilstand skrives synkront til `localStorage`.
  * 3. Den tilsvarende operasjonen sendes asynkront til `storage`
- *    (`WatchlistStorage`). Feiler den, rulles både reducer-tilstanden og
- *    `localStorage` tilbake til forrige verdi, og `saveError` settes.
+ *    (`WatchlistStorage`). Feiler den, angres *kun denne handlingens egen
+ *    effekt* (via `computeUndoPatch`, anvendt på gjeldende `itemsRef.current`
+ *    på feiltidspunktet — ikke et gammelt snapshot), og `saveError` settes.
+ *    Se PR #23-reviewen: å erstatte hele tilstanden med et snapshot tatt ved
+ *    kalltidspunktet kunne slette en senere, uavhengig, vellykket handling
+ *    på en annen tittel.
+ *
+ * Tilsvarende presisjon gjelder `hydrate()`: handlinger utført mens den
+ * *initiale* Firestore-hentingen er underveis spilles av oppå
+ * hentingsresultatet (via `computeRedoPatch`) i stedet for å bli overskrevet
+ * av det.
  *
  * `items` speiles i en ref (`itemsRef`) som oppdateres i samme steg som
  * state settes, slik at flere handlinger i rask rekkefølge alltid bygger
@@ -135,6 +266,12 @@ export function WatchlistProvider({
   const [saveError, setSaveError] = useState(false);
   const hasHydratedOnceRef = useRef(false);
 
+  // Handlinger utført mens en henting er underveis må spilles av oppå
+  // hentingsresultatet i stedet for å bli overskrevet av det (se
+  // docstringen over og PR #23-reviewen).
+  const isHydratingRef = useRef(false);
+  const pendingPatchesRef = useRef<ItemsPatch[]>([]);
+
   const hydrate = useCallback(() => {
     if (userId === null) {
       return;
@@ -145,12 +282,29 @@ export function WatchlistProvider({
       setIsLoading(true);
     }
 
+    isHydratingRef.current = true;
+    pendingPatchesRef.current = [];
+
     storage
       .load(userId)
       .then((remoteItems) => {
         hasHydratedOnceRef.current = true;
-        itemsRef.current = remoteItems;
-        setItems(remoteItems);
+        isHydratingRef.current = false;
+
+        // Spill av handlinger som ble utført mens hentingen var underveis,
+        // oppå det hentede resultatet — dekker racen der f.eks. et
+        // addToWatchlist-kall midt i en pågående henting ellers ville blitt
+        // usynlig igjen idet hentingen resolver med et datasett fra før
+        // handlingen.
+        const patches = pendingPatchesRef.current;
+        pendingPatchesRef.current = [];
+        const merged = patches.reduce(
+          (acc, patch) => patch(acc),
+          remoteItems,
+        );
+
+        itemsRef.current = merged;
+        setItems(merged);
         if (isInitialHydration) {
           setIsLoading(false);
         }
@@ -161,6 +315,13 @@ export function WatchlistProvider({
           error,
         );
         hasHydratedOnceRef.current = true;
+        isHydratingRef.current = false;
+        // Hentingen feilet — lokal state (allerede oppdatert optimistisk av
+        // eventuelle handlinger underveis) er urørt, så det er ingenting å
+        // spille av. Nullstill likevel køen for å unngå at eldre patcher
+        // (med potensielt utdaterte tidsstempler) gjenbrukes av en senere,
+        // vellykket henting.
+        pendingPatchesRef.current = [];
         if (isInitialHydration) {
           setIsLoading(false);
         }
@@ -195,6 +356,22 @@ export function WatchlistProvider({
       itemsRef.current = next;
       setItems(next);
 
+      // Registrer en gjør-om-patch for denne handlingen så lenge en henting
+      // er underveis (se `hydrate()`) — samme patch-referanse gjenbrukes
+      // under for å fjerne den igjen dersom denne handlingens egen skriving
+      // feiler *før* hentingen rekker å resolve (uten dette ville en
+      // rullet-tilbake handling likevel blitt "gjort om" igjen når
+      // hentingen senere spiller av køen).
+      const redoPatchForHydration = isHydratingRef.current
+        ? computeRedoPatch(action, next)
+        : null;
+      if (redoPatchForHydration !== null) {
+        pendingPatchesRef.current = [
+          ...pendingPatchesRef.current,
+          redoPatchForHydration,
+        ];
+      }
+
       const savedLocally = saveWatchlistToStorage(next);
       setSaveError(!savedLocally);
 
@@ -209,9 +386,20 @@ export function WatchlistProvider({
           "[watchlist] Kunne ikke lagre watchlist-endringen til Firestore — ruller tilbake",
           error,
         );
-        itemsRef.current = previous;
-        setItems(previous);
-        saveWatchlistToStorage(previous);
+        if (redoPatchForHydration !== null) {
+          pendingPatchesRef.current = pendingPatchesRef.current.filter(
+            (patch) => patch !== redoPatchForHydration,
+          );
+        }
+        // Angre kun DENNE handlingens egen effekt, anvendt på tilstanden
+        // slik den faktisk er *nå* (kan ha blitt endret av andre,
+        // uavhengige handlinger i mellomtiden) — ikke et gammelt snapshot
+        // fra kalltidspunktet (se PR #23-reviewen).
+        const undoPatch = computeUndoPatch(action, previous);
+        const rolledBack = undoPatch(itemsRef.current);
+        itemsRef.current = rolledBack;
+        setItems(rolledBack);
+        saveWatchlistToStorage(rolledBack);
         setSaveError(true);
       });
     },

@@ -52,7 +52,7 @@ Samme null-håndtering (rating, streaming, plakat) gjenbrukes identisk på både
 - Klikk på et watchlist-kort navigerer til `/title/:id` for å se full informasjon (ferske rating/streaming-data hentes der, se [architecture.md](./architecture.md) for hvorfor watchlisten kun lagrer et lett snapshot).
 - Tom-tilstand per fane når listen er tom (f.eks. «Du har ikke lagt til noe du planlegger å se ennå» med lenke til søk).
 - «Sett»-status gjelder hele tittelen — for serier finnes ingen sporing per sesong/episode i v1 (bevisst avgrensning).
-- Hvis lagring av en watchlist-endring feiler (full `localStorage` selv etter cache-opprydding), vises en synlig feilmelding — watchlist-skriving feiler aldri stille (se kvotehåndtering i [architecture.md](./architecture.md#cache-design)).
+- Hvis lagring av en watchlist-endring feiler — enten full `localStorage` selv etter cache-opprydding (se kvotehåndtering i [architecture.md](./architecture.md#cache-design)), eller en nettverksfeil mot Firestore (DB-migrering, se [architecture.md](./architecture.md#state-management)) — vises en synlig, generisk feilmelding — watchlist-skriving feiler aldri stille.
 
 ## Feilmeldinger
 
