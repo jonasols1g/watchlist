@@ -15,9 +15,10 @@ Se [architecture.md](./architecture.md) for teknisk struktur bak sidene beskreve
 
 ## Søkeflyt (tekst og tale)
 
-- Søkefeltet (`SearchBar`) er alltid tilgjengelig og er standardveien inn — talesøk er et alternativ, ikke en erstatning.
+- Søkefeltet (`SearchBar`) er alltid tilgjengelig og er standardveien inn — talesøk er et alternativ, ikke en erstatning. Selve inputfeltet beholder sin plassering fra fase 8/11 (sentrert i tom-tilstand, topp-ankret etter et søk).
 - Søket trigges **eksplisitt** — ved Enter eller klikk på søkeknappen. Det søkes ikke mens man skriver (ingen debounce): enklere flyt med færre race-tilfeller å teste, færre API-kall og mindre cache. Et nytt submit avbryter et eventuelt pågående søk via `AbortSignal`, slik at et utdatert resultat aldri kan overskrive et nyere.
-- En mikrofonknapp (`VoiceSearchButton`) vises ved siden av søkefeltet. Når nettleseren ikke støtter `SpeechRecognition` (Web Speech API) — typisk Firefox og Safari — vises knappen enten deaktivert med en forklarende tekst («Talesøk støttes ikke i denne nettleseren») eller skjules helt. Søkefeltet fungerer uendret uansett.
+- Søkeknappen og mikrofonknappen (`VoiceSearchButton`) er, i motsetning til selve inputfeltet, **fast plassert** nederst i viewporten, rett over `NavBar` — samme mønster som CTA-en på detaljsiden (se [Detaljvisning](#detaljvisning)). De to knappene vises uendret uavhengig av scroll-posisjon og av om feltet er sentrert (tom-tilstand) eller topp-ankret (etter søk), iht. `docs/design-spec/screenshots/01-sok.png`.
+- En mikrofonknapp (`VoiceSearchButton`) vises ved siden av søkeknappen i denne faste bunn-raden. Når nettleseren ikke støtter `SpeechRecognition` (Web Speech API) — typisk Firefox og Safari — vises knappen enten deaktivert med en forklarende tekst («Talesøk støttes ikke i denne nettleseren») eller skjules helt. Søkefeltet fungerer uendret uansett.
 - Tekstsøk og talesøk går gjennom **nøyaktig samme kodepath**: begge ender i ett `handleSearch(query)`-kall på hjemsiden, som normaliserer query og kaller `MediaProvider.search`. Talesøk skiller seg kun ved at teksten kommer fra et tale-til-tekst-resultat (kun endelig/`isFinal`-resultat brukes) i stedet for tastatur.
 - Mens talegjenkjenning lytter, vises en tydelig visuell indikasjon (f.eks. pulserende mikrofonikon). Feil fra talegjenkjenning (f.eks. nektet mikrofontilgang, ingen tale oppdaget) vises som en ikke-blokkerende feilmelding ved siden av søkefeltet — søkefeltet forblir brukbart.
 - Talegjenkjenningen kjører med `lang: 'en-US'`: engelske titler («the lord of the rings») treffer riktig, og OMDb-katalogen er uansett engelskspråklig. Norske søkefraser støttes ikke via tale — da brukes tekstsøk. Merk at Chrome sender lydopptaket til Googles servere for gjenkjenning — akseptert risiko, se [architecture.md](./architecture.md#kjente-forutsetninger-og-risikoer).
@@ -96,8 +97,9 @@ Fasit for farger, typografi og layout er [docs/design-spec/README.md](./design-s
 
 ### Bevisste avvik fra pixel-perfect
 
-Disse seks punktene er endelige, `reviewer`-/`verifier`-godkjente beslutninger — ikke gjenstående arbeid:
+Disse syv punktene er endelige, `reviewer`-/`verifier`-godkjente beslutninger — ikke gjenstående arbeid:
 
+- Søkeknappen og mikrofonknappen vises fast nederst i viewporten i **begge** tilstander (tom-tilstand og etter søk), ikke kun i tom-tilstand som i `docs/design-spec/screenshots/02-sokeresultater.png` (der raden ikke er synlig i det statiske skjermbildet). Konsekvent, alltid-tilgjengelig plassering ble prioritert over å gjenskape akkurat det skjermbildet (issue #28).
 - Bunn-fanebarens `/`-fane heter «Søk» (matcher design-spec-teksten), ikke «Hjem» som tidligere.
 - `WatchlistPage`s `<h1>` beholder teksten «Watchlist» (ikke «Min liste» som i skjermbildet), fordi eksisterende tester forventer nøyaktig den teksten; antallet vises som søsken-element.
 - `WatchlistStarToggle` på søkeresultat-kort legger kun til/fjerner (bytter ikke planlagt/sett) — synlig statustekst beholdt for å bevare eksisterende E2E-atferd. Statusbytte skjer fortsatt via `WatchlistToggleButton`/`WatchlistItemCard`.
