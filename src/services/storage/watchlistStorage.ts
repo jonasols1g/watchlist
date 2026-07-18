@@ -9,6 +9,15 @@ import {
 
 const WATCHLIST_STORAGE_KEY = `${DATA_KEY_PREFIX}items`;
 
+/**
+ * Flagg satt etter en vellykket engangs-migrering av den lokale watchlisten
+ * til Firestore (DB-migrering issue D — se
+ * docs/plans/watchlist-database-migrering.md#migrering-av-eksisterende-
+ * localstorage-data og `services/storage/migrateLocalWatchlistToCloud.ts`).
+ * Ren tilstedeværelse av nøkkelen er signalet — verdien selv brukes ikke.
+ */
+const MIGRATED_TO_CLOUD_KEY = `${DATA_KEY_PREFIX}migratedToCloud`;
+
 /** Øvre grense for cache-evictions per lagringsforsøk — skal aldri kunne henge appen. */
 const MAX_EVICTION_ITERATIONS = 100;
 
@@ -226,4 +235,23 @@ export function loadWatchlistFromStorage(): WatchlistItem[] {
  */
 export function saveWatchlistToStorage(items: WatchlistItem[]): boolean {
   return new LocalStorageWatchlistStorage(resolveDefaultStorage()).save(items);
+}
+
+/**
+ * `true` når den lokale watchlisten allerede er migrert til Firestore (se
+ * `migrateLocalWatchlistToCloud.ts`) — hindrer at et gjentatt app-load
+ * laster opp de samme elementene på nytt.
+ */
+export function hasMigratedWatchlistToCloud(): boolean {
+  return resolveDefaultStorage().getItem(MIGRATED_TO_CLOUD_KEY) !== null;
+}
+
+/**
+ * Setter migreringsflagget. Kalles **kun** etter at alle lokale elementer er
+ * bekreftet skrevet til Firestore — se `migrateLocalWatchlistToCloud.ts`,
+ * som aldri setter flagget ved en feilet opplasting (retry ved neste
+ * app-load).
+ */
+export function markWatchlistMigratedToCloud(): void {
+  resolveDefaultStorage().setItem(MIGRATED_TO_CLOUD_KEY, "true");
 }

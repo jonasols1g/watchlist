@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { migrateLocalWatchlistToCloud } from "../services/storage/migrateLocalWatchlistToCloud";
 import type { WatchlistStorage } from "../services/storage/WatchlistRemoteStorage";
 import {
   loadWatchlistFromStorage,
@@ -157,9 +158,7 @@ function computeRedoPatch(
     }
 
     case "SET_STATUS": {
-      const updatedItem = after.find(
-        (item) => item.mediaId === action.mediaId,
-      );
+      const updatedItem = after.find((item) => item.mediaId === action.mediaId);
       if (updatedItem === undefined) {
         return (items) => items;
       }
@@ -178,6 +177,27 @@ function computeRedoPatch(
     default:
       return (items) => items;
   }
+}
+
+/**
+ * Slår sammen migrerte lokale elementer (se `migrateLocalWatchlistToCloud`)
+ * inn i det hentede Firestore-resultatet — lokal versjon vinner ved
+ * konflikt (samme regel som selve migreringen bruker mot Firestore), slik
+ * at et akkurat migrert element ikke vises med en potensielt eldre
+ * Firestore-variant i UI-et i det korte vinduet før neste henting.
+ */
+function mergeMigratedItemsLocalWins(
+  remote: WatchlistItem[],
+  migrated: WatchlistItem[],
+): WatchlistItem[] {
+  if (migrated.length === 0) {
+    return remote;
+  }
+  const migratedIds = new Set(migrated.map((item) => item.mediaId));
+  return [
+    ...remote.filter((item) => !migratedIds.has(item.mediaId)),
+    ...migrated,
+  ];
 }
 
 export interface WatchlistContextValue {
@@ -249,6 +269,12 @@ export interface WatchlistProviderProps {
  * hentingsresultatet (via `computeRedoPatch`) i stedet for å bli overskrevet
  * av det.
  *
+ * Rett etter at den initiale hentingen er ferdig, forsøkes en engangs-
+ * migrering av en eventuell eksisterende `localStorage`-watchlist til
+ * Firestore (`migrateLocalWatchlistToCloud`, DB-migrering issue D) —
+ * ventes på før `items` settes, slik at allerede-lokale elementer aldri
+ * blinker bort bak et (typisk tomt) første Firestore-hentingsresultat.
+ *
  * `items` speiles i en ref (`itemsRef`) som oppdateres i samme steg som
  * state settes, slik at flere handlinger i rask rekkefølge alltid bygger
  * videre på det korrekte, akkumulerte resultatet (ikke en stale closure over
@@ -287,7 +313,7 @@ export function WatchlistProvider({
 
     storage
       .load(userId)
-      .then((remoteItems) => {
+      .then(async (remoteItems) => {
         hasHydratedOnceRef.current = true;
         isHydratingRef.current = false;
 
@@ -298,10 +324,29 @@ export function WatchlistProvider({
         // handlingen.
         const patches = pendingPatchesRef.current;
         pendingPatchesRef.current = [];
-        const merged = patches.reduce(
-          (acc, patch) => patch(acc),
-          remoteItems,
-        );
+        let merged = patches.reduce((acc, patch) => patch(acc), remoteItems);
+
+        // Engangs-migrering av en eventuell eksisterende
+        // localStorage-watchlist til Firestore (DB-migrering issue D), kun
+        // forsøkt ved den *initiale* hentingen i denne app-instansens
+        // levetid — se docs/plans/watchlist-database-migrering.md#migrering-
+        // av-eksisterende-localstorage-data. Ventes på her (før `setItems`
+        // kalles i det hele tatt) slik at eventuelle allerede-lokale
+        // elementer aldri vises som midlertidig forsvunnet bak et typisk
+        // tomt første Firestore-hentingsresultat.
+        if (isInitialHydration) {
+          const migration = await migrateLocalWatchlistToCloud(userId, storage);
+          if (migration.items.length > 0) {
+            // Slås inn i visningen uansett om selve opplastingen lyktes —
+            // se `WatchlistMigrationOutcome`s docstring for begrunnelsen
+            // (kjente, gyldige lokale data skal ikke fremstå som forsvunnet
+            // mens migreringen venter på et senere retry-forsøk).
+            merged = mergeMigratedItemsLocalWins(merged, migration.items);
+            if (!migration.succeeded) {
+              setSaveError(true);
+            }
+          }
+        }
 
         itemsRef.current = merged;
         setItems(merged);

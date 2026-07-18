@@ -153,10 +153,19 @@ async function fulfillCommit(
  * mot en enkel in-memory «database» (per kall til denne funksjonen, typisk
  * én gang per test i `beforeEach`) — uten noe ekte nettverkskall mot
  * Firestore.
+ *
+ * Tar imot et valgfritt `documents`-kart (default: et nytt, tomt kart) og
+ * returnerer det som ble brukt — DB-migrering issue D
+ * (`e2e/watchlist-migration.spec.ts`) gjenbruker samme kart på tvers av to
+ * separate `page`/`BrowserContext`-instanser (simulerer to enheter/faner mot
+ * *samme* Firestore-"backend") for å bevise at et migrert element faktisk
+ * ligger server-side, ikke bare i den lokale skriveputten på siden som
+ * migrerte det.
  */
-export async function registerFirestoreStub(page: Page): Promise<void> {
-  const documents = new Map<string, Record<string, FirestoreValue>>();
-
+export async function registerFirestoreStub(
+  page: Page,
+  documents: Map<string, Record<string, FirestoreValue>> = new Map(),
+): Promise<Map<string, Record<string, FirestoreValue>>> {
   await page.route(
     "**/firestore.googleapis.com/v1/projects/*/databases/*/documents/users/*:runQuery**",
     (route) => fulfillRunQuery(route, documents),
@@ -166,4 +175,6 @@ export async function registerFirestoreStub(page: Page): Promise<void> {
     "**/firestore.googleapis.com/v1/projects/*/databases/*/documents:commit**",
     (route) => fulfillCommit(route, documents),
   );
+
+  return documents;
 }
