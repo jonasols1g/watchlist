@@ -87,6 +87,24 @@ export interface WatchlistItem {
 
 **`mediaId` og provider-bytte:** `mediaId` er `mock-movie-1` e.l. i fase 2–9 og en IMDb-ID (`tt0133093`) fra fase 10. Ved byttet til ekte API nullstilles watchlisten bevisst — data-versjonen bumpes og det bygges ingen migrasjonslogikk (se risikoavsnittet i [architecture.md](./architecture.md#kjente-forutsetninger-og-risikoer)). Det er en engangshendelse: IMDb-ID-er er stabile på tvers av datakilder, så senere bytte av OMDb eller MOTN krever ingen ny nullstilling.
 
+## Firestore-skjema
+
+Med DB-migreringen (se [architecture.md](./architecture.md#identitet-og-datalagring-firebase)) er `WatchlistItem` også formen som persisteres i Firestore, ved siden av (ikke i stedet for) `localStorage`. `FirestoreWatchlistStorage` (`src/services/storage/FirestoreWatchlistStorage.ts`) mapper mellom de to formene — dokumentet under er nøyaktig feltsettet appen faktisk skriver og leser, ikke en full `WatchlistItem`-serialisering:
+
+```
+users/{uid}/watchlistItems/{mediaId}
+  media: MediaSummary       // samme lette snapshot som WatchlistItem.media
+  status: 'planned' | 'watched'
+  addedAt: string            // ISO-tidsstempel
+  watchedAt?: string          // kun til stede når status er 'watched'
+```
+
+- **Dokument-ID = `mediaId`** (IMDb-ID) — `WatchlistItem.mediaId` lagres altså ikke som eget felt i dokumentet, den *er* dokument-stien. `FirestoreWatchlistStorage.load()` setter den tilbake inn i objektet fra `documentSnapshot.id` ved lesing.
+- **`watchedAt` fjernes eksplisitt** (Firestores `deleteField()`), ikke settes til `undefined`, når status settes tilbake til `"planned"` — Firestore tillater ikke `undefined`-verdier i dokumenter.
+- **Runtime-validering ved lesing:** samme prinsipp som for `localStorage` (se «Runtime-validering» under) — et Firestore-dokument som parser, men har feil form (manipulert eller korrupt), behandles som fravær av elementet, ikke en krasj. Valideringen er bevisst duplisert lokalt i `FirestoreWatchlistStorage.ts` fremfor gjenbrukt fra `watchlistStorage.ts`, som issue #18 holder uendret.
+- **Security rules** (`firestore.rules`, repo-rot) håndhever at kun `request.auth.uid == userId` kan lese eller skrive et gitt brukerdokument-tre — se [architecture.md](./architecture.md#identitet-og-datalagring-firebase).
+- **Migreringsflagget** (`watchlist:v2:data:migratedToCloud`) lagres derimot ikke i Firestore — det er et rent lokalt, per-nettleserprofil flagg i `localStorage` (samme data-navnerom som selve den lokale watchlisten), se `migrateLocalWatchlistToCloud.ts`.
+
 ## `types/cache.ts`
 
 ```ts

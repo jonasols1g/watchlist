@@ -2,7 +2,7 @@
 
 ## Overordnet lagdeling
 
-Appen er en ren klient-applikasjon (SPA). Det finnes ingen backend — alt kjører i nettleseren, og all persistert state ligger i `localStorage`.
+Appen er en ren klient-applikasjon (SPA): all UI-logikk kjører i nettleseren, og det finnes ingen server *vi selv drifter*. Frem til DB-migreringen (se [Identitet og datalagring](#identitet-og-datalagring-firebase)) betydde det "ingen backend i det hele tatt" — all persistert state lå i `localStorage`. Fra og med DB-migreringen bruker appen **Firebase/Firestore** som en administrert (managed) backend-tjeneste: watchlisten persisteres i Firestore under en anonym Firebase-auth-identitet, men det finnes fortsatt ingen egen serverkode, ingen API-nøkler å skjule server-side, og ingen infrastruktur vi selv vedlikeholder — Firebase-prosjektet er konfigurasjon og sikkerhetsregler (`firestore.rules`), ikke driftsansvar. `localStorage` brukes fortsatt, både som cache for OMDb/MOTN-data (uendret) og som en synkron offline-skriveputt for watchlisten (skrives til ved siden av Firestore, se [Identitet og datalagring](#identitet-og-datalagring-firebase)).
 
 ```
 UI (routes, komponenter)
@@ -74,6 +74,91 @@ OMDbs responsformat krever mer forsvar i mappingen enn responsformater flest:
 - **RT-score ligger i et array**, ikke i et eget felt: `Ratings: [{ "Source": "Rotten Tomatoes", "Value": "87%" }]`. Finn på `Source`, strip `%`, parse til tall. Mangler ofte helt.
 - **Søk gir maks 10 treff per side** (mot MOTNs 20). Med "kun side 1 i v1" betyr det 10 resultater.
 
+## Identitet og datalagring (Firebase)
+
+DB-migreringen (issue A–D, se `docs/plans/watchlist-database-migrering.md`) flytter watchlisten fra kun `localStorage` til **Firebase/Firestore**, med **usynlig anonym autentisering** som identitet — ingen innloggingsskjema, ingen synlig steg. `MediaProvider`-laget (OMDb/MOTN) er upåvirket av dette; det gjelder utelukkende watchlist-persistering.
+
+### Identitet: `AuthContext`
+
+```ts
+// context/AuthContext.tsx
+export type AuthStatus = 'loading' | 'ready' | 'error';
+export interface AuthContextValue {
+  userId: string | null; // null inntil den anonyme sesjonen er klar
+  status: AuthStatus;
+}
+```
+
+`AuthProvider` wrapper `App.tsx` **utenfor** `WatchlistProvider`, siden watchlist-hydrering avhenger av `userId`. Ved mount lyttes det på `onAuthStateChanged` (fra `firebase/auth`, full SDK — kun `firebase/firestore` er byttet til lite-varianten, se under); finnes ingen bruker fra før, kalles `signInAnonymously` automatisk. Dette gir en ekte `auth.uid` som Firestore Security Rules kan håndheve mot, i motsetning til en klient-generert enhets-ID som ikke beviser eierskap server-side.
+
+**Enhetsbundet, ikke kontobundet identitet:** Firebase persisterer den anonyme sesjonen i nettleserens lokale lagring, så den overlever reload og gjenåpning av samme nettleserprofil — men er **ikke** knyttet til noen e-post, Google-konto eller annen gjenkjennbar identitet. En ny nettleserprofil, en annen enhet, inkognitomodus, eller at brukeren rydder nettleserdata, gir en **helt ny, tom** anonym identitet uten noen kobling til den forrige. Ekte multi-device-synk (koble flere enheter til samme identitet via e-post-OTP eller Google, `linkWithCredential`) er bevisst utenfor scope i denne runden — en fremtidig, ikke-implementert oppgave. Se også nyansen til "flere faner" under [State management](#state-management).
+
+### Datalagring: Firestore
+
+**Skjema** — én subcollection per bruker, dokument-ID = `mediaId` (IMDb-ID), som bevarer invarianten om at IMDb-ID-en er den delte nøkkelen på tvers av hele appen (se [Datakilder](#datakilder)):
+
+```
+users/{uid}/watchlistItems/{mediaId}
+  media: MediaSummary       // samme lette snapshot-form som i WatchlistItem
+  status: 'planned' | 'watched'
+  addedAt: string            // ISO
+  watchedAt?: string          // kun til stede når status er 'watched'
+```
+
+Se [data-model.md](./data-model.md#firestore-skjema) for feltdetaljer og runtime-validering ved lesing.
+
+**Security rules** (`firestore.rules`, repo-rot):
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/watchlistItems/{mediaId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+Ingen kan lese eller skrive andre brukeres `watchlistItems` — sikkerheten ligger i disse reglene, håndhevet server-side av Firestore, ikke i hemmelighold av Firebase-klientkonfigurasjonen (som er designet for å være offentlig, se [Kjente forutsetninger og risikoer](#kjente-forutsetninger-og-risikoer)).
+
+### `firebase/firestore/lite`, ikke full `firebase/firestore`
+
+**Viktig revidert vurdering:** den opprinnelige planen (issue A) antok, uten et ekte Firebase-prosjekt å teste mot, at `experimentalForceLongPolling: true` på den fulle `firebase/firestore`-klienten ville gjøre trafikken til «ordinære, diskrete HTTP-kall» som Playwrights `page.route()` kunne stubbe forutsigbart for E2E. Empirisk verifisering mot et ekte Firebase-prosjekt (issue C) motbeviste dette: selv med den innstillingen bruker den fulle SDK-en fortsatt et *stateful* WebChannel-sesjonsprotokoll (håndtrykk, `RID`/`SID`/`AID`/`gsessionid`, strømtokens) for *alle* operasjoner, inkludert engangs `getDocs`/`setDoc` — upraktisk å stubbe pålitelig med `page.route()`, som svarer på enkeltstående request/response-par, ikke en flertrinns håndtrykk-sekvens.
+
+`WatchlistStorage` (se under) bruker aldri realtime-lyttere (`onSnapshot`) — kun engangs `getDoc(s)`/`setDoc`/`updateDoc`/`deleteDoc`. Løsningen ble derfor å bytte `firebaseClient.ts`/`FirestoreWatchlistStorage.ts` til **`firebase/firestore/lite`**, som er bygget nøyaktig for dette bruksmønsteret: den mangler realtime-lyttere/offline-persistens, men bruker Firestores REST-API direkte — ett diskret `fetch`-kall per operasjon (`POST .../documents:runQuery` for lesing, `POST .../documents:commit` for skriving). Dette gir ordinære, stubbare HTTP-kall for E2E (se `e2e/fixtures/firestoreStub.ts`) og en mindre bunt (bekreftet fall fra 830 kB til 464 kB i issue C). `firebase/auth` er upåvirket av dette byttet og bruker fortsatt den fulle SDK-en.
+
+### `WatchlistStorage`-abstraksjonen
+
+Parallelt til `MediaProvider`-mønsteret: `WatchlistContext` er uavhengig av hvilken database som faktisk ligger bak grensesnittet.
+
+```ts
+// services/storage/WatchlistRemoteStorage.ts
+export interface WatchlistStorage {
+  load(userId: string): Promise<WatchlistItem[]>;
+  upsert(userId: string, item: WatchlistItem): Promise<void>;
+  remove(userId: string, mediaId: string): Promise<void>;
+  updateStatus(userId: string, mediaId: string, status: WatchlistStatus, watchedAt?: string): Promise<void>;
+}
+```
+
+`FirestoreWatchlistStorage` (`services/storage/FirestoreWatchlistStorage.ts`) er den eneste implementasjonen i produksjon, sammensatt i `services/storage/index.ts` (samme sammensetningsrot-mønster som `services/media/index.ts`). Filen heter bevisst `WatchlistRemoteStorage.ts`, ikke `WatchlistStorage.ts` som planen opprinnelig spesifiserte — det kolliderer bokstavelig med det allerede eksisterende, urørte `watchlistStorage.ts` (den synkrone `localStorage`-koden) på et versjonsufølsomt-men-ikke-store/små-bokstaver-filsystem (macOS' APFS-standardoppsett). Det eksporterte grensesnittnavnet er likevel nøyaktig `WatchlistStorage` som spesifisert — kun filbanen er endret.
+
+`WatchlistContext` bruker `WatchlistStorage` som write-through-lag oppå den eksisterende, urørte `localStorage`-skriveputten (se [State management](#state-management) for hele flyten): optimistic update → synkron `localStorage`-skriving → asynkron Firestore-skriving. Feiler Firestore-skrivingen, rulles kun den aktuelle handlingens egen effekt tilbake, ikke hele tilstanden.
+
+### Migrering av eksisterende `localStorage`-data
+
+`src/services/storage/migrateLocalWatchlistToCloud.ts` kjører **én gang** per nettleserprofil, rett etter at den anonyme sesjonen er etablert og den *initiale* Firestore-hentingen er fullført:
+
+1. Er migreringsflagget (`watchlist:v2:data:migratedToCloud`, i samme data-navnerom som selve watchlisten) allerede satt: ingenting å gjøre.
+2. Er den lokale watchlisten tom: ingenting å *migrere*, men flagget settes likevel — ellers ville sjekket blitt forsøkt på nytt ved hvert påfølgende app-load, for evig, for enhver bruker som aldri hadde noen lokal watchlist.
+3. Ellers skrives (`upsert`, som overskriver hele dokumentet) alle lokale elementer til Firestore. **Bevisst valg: lokal versjon vinner ved konflikt** — til forskjell fra nullstillingen som ble gjort ved API-byttet i fase 10 (se [Kjente forutsetninger og risikoer](#kjente-forutsetninger-og-risikoer)), er hensikten her å *bevare* eksisterende brukerdata inn i den nye databasen, ikke å starte blankt.
+4. Lykkes alle skrivingene, settes migreringsflagget. Feiler ett eller flere forsøk (f.eks. offline), settes flagget **ikke** — et senere app-load prøver på nytt. `localStorage` er urørt av funksjonen uansett utfall; lokale data slettes aldri av migreringen selv.
+
+Migrerte elementer vises i UI-et selv om selve opplastingen feiler (kjente, gyldige lokale data skal ikke fremstå som forsvunnet mens migreringen venter på et senere retry-forsøk) — `saveError` settes i stedet.
+
+**Kjent, akseptert kant (ikke fikset):** migrering og vanlig watchlist-synk deler samme grunnleggende begrensning som "flere faner" alltid har hatt (se [State management](#state-management)) — det finnes ingen låsing mot at to faner/vinduer på samme nettleserprofil kjører migrering eller skriver samtidig. I det (sjeldne) tilfellet vinner siste skriving, akkurat som for enhver annen samtidig watchlist-endring i v1.
+
 ## Prosjektstruktur
 
 ```
@@ -83,14 +168,19 @@ watchlist/
 ├── playwright.config.ts        # E2E; webServer starter vite preview mot produksjonsbygget
 ├── .nvmrc                       # pinnet Node LTS (npm som pakkebehandler, jf. "engines" i package.json)
 ├── .github/workflows/ci.yml    # lint + enhetstester + E2E + npm audit + deploy til GitHub Pages
+├── firestore.rules              # Security rules for DB-migreringen, se «Identitet og datalagring»
 ├── e2e/
 │   ├── search.spec.ts           # fase 5
 │   ├── watchlist.spec.ts        # fase 7
 │   ├── deep-links.spec.ts       # fase 9
-│   └── fixtures/apiStubs.ts     # page.route-stubber for OMDb/MOTN
+│   ├── watchlist-migration.spec.ts   # DB-migrering issue D
+│   └── fixtures/
+│       ├── apiStubs.ts          # page.route-stubber for OMDb/MOTN
+│       ├── firebaseAuthStub.ts  # stubber anonym Firebase Auth-flyten
+│       └── firestoreStub.ts     # stateful in-memory page.route-stub for Firestore REST-kallene
 ├── tsconfig.json
 ├── package.json
-├── .env.example                 # VITE_OMDB_API_KEY, VITE_MOTN_API_KEY (se fase 10)
+├── .env.example                 # VITE_OMDB_API_KEY, VITE_MOTN_API_KEY (se fase 10), VITE_FIREBASE_* (DB-migrering)
 ├── docs/
 └── src/
     ├── main.tsx
@@ -130,7 +220,8 @@ watchlist/
     │   └── useLocalStorage.ts
     ├── context/
     │   ├── MediaProviderContext.tsx   # DI av konfigurert MediaProvider
-    │   └── WatchlistContext.tsx       # useReducer + persistering
+    │   ├── AuthContext.tsx            # DB-migrering: usynlig anonym Firebase-sesjon
+    │   └── WatchlistContext.tsx       # useReducer + persistering (localStorage + Firestore write-through)
     ├── services/
     │   ├── media/
     │   │   ├── MediaProvider.ts
@@ -141,8 +232,14 @@ watchlist/
     │   │   ├── CacheStore.ts
     │   │   ├── LocalStorageCacheStore.ts
     │   │   └── cacheKeys.ts
+    │   ├── auth/
+    │   │   └── firebaseClient.ts      # sammensetningsrot: Firebase App + Auth + Firestore (lite)
     │   └── storage/
-    │       └── watchlistStorage.ts
+    │       ├── watchlistStorage.ts            # uendret: synkron localStorage-skriveputt + migreringsflagg
+    │       ├── WatchlistRemoteStorage.ts       # eksporterer `WatchlistStorage`-grensesnittet
+    │       ├── FirestoreWatchlistStorage.ts    # `WatchlistStorage` mot Firestore (firebase/firestore/lite)
+    │       ├── migrateLocalWatchlistToCloud.ts # engangsmigrering, se «Identitet og datalagring»
+    │       └── index.ts                        # sammensetningsrot: `watchlistStorage`-instansen
     ├── types/
     │   ├── media.ts
     │   ├── watchlist.ts
@@ -154,7 +251,9 @@ watchlist/
         ├── setupTests.ts
         ├── testUtils.tsx               # renderWithProviders()
         ├── fixtures/media.fixtures.ts
-        └── mocks/createMockMediaProvider.ts
+        └── mocks/
+            ├── createMockMediaProvider.ts
+            └── createMockWatchlistStorage.ts   # testdobbel for `WatchlistStorage`
 ```
 
 Komponent-/hook-tester kolokaliseres (f.eks. `SearchBar.test.tsx` ved siden av `SearchBar.tsx`). Delt testinfrastruktur ligger i `src/test/`. E2E-tester ligger utenfor `src/`, i `e2e/`.
@@ -347,7 +446,9 @@ export function useMediaProvider(): MediaProvider { /* ... */ }
 
 `MediaProviderContext` (fremfor et modul-singleton) gjør det trivielt å injisere en `createMockMediaProvider()`-testdobbel i komponenttester uten skjøre modul-mocks.
 
-**Flere faner:** To samtidige faner som endrer watchlisten overskriver hverandre (siste skriving vinner). Dette er en akseptert begrensning for en enkeltbruker-app; det lyttes ikke på `storage`-eventet i v1.
+**Flere faner:** To samtidige faner som endrer watchlisten overskriver hverandre (siste skriving vinner). Dette er en akseptert begrensning for en enkeltbruker-app; det lyttes ikke på `storage`-eventet i v1. Med DB-migreringen gjelder den samme begrensningen nå også mot Firestore: `WatchlistStorage` bruker ingen realtime-lyttere (`onSnapshot`), kun engangs henting (ved mount og ved `online`-gjenoppkobling, se [Identitet og datalagring](#identitet-og-datalagring-firebase)), så to faner *på samme nettleserprofil* (samme anonyme identitet) som endrer watchlisten samtidig kan fortsatt overskrive hverandre — uendret risiko, bare flyttet fra kun `localStorage` til også å gjelde Firestore.
+
+**Flere enheter — hver sin adskilte identitet:** Til forskjell fra "flere faner" (som deler én identitet og i prinsippet *kunne* vist samme data) får flere *enheter* i denne runden hver sin egen, adskilte anonyme Firebase-identitet (se [Identitet og datalagring](#identitet-og-datalagring-firebase)) — de deler ingen data i det hele tatt, ikke engang med en overskrivingsrisiko. En bruker som åpner appen på mobil og på laptop ser to fullstendig uavhengige, tomme watchlister. Ekte multi-device-synk (konto-linking) er en fremtidig, ikke-implementert oppgave.
 
 **Feilmeldinger:** `MediaProviderError.code` mappes til faste, brukervennlige tekster i `ErrorMessage`-komponenten (se [design.md](./design.md#feilmeldinger)) — tekniske detaljer logges til konsollen, aldri til bruker.
 
@@ -367,9 +468,20 @@ export function useMediaProvider(): MediaProvider { /* ... */ }
 - **`localStorage` utilgjengelig** (deaktivert, enkelte private-moduser): både `LocalStorageCacheStore` og `watchlistStorage` feature-detecter ved oppstart og faller tilbake til en in-memory-variant. Appen fungerer da fullt ut, men uten persistens mellom økter — den skal aldri kræsje på manglende storage.
 - **Runtime-validering av persistert data:** alt som leses fra `localStorage` (`CacheEntry`, `WatchlistItem[]`) valideres med lettvekts type guards (håndskrevne `is…`-funksjoner, ingen Zod-avhengighet) før bruk. Data som parser, men har feil form, behandles som fravær (cache-miss / tom watchlist) — `get<T>`-casten alene er ingen garanti mot manipulert eller korrupt innhold.
 - **URL-er fra eksterne API-er** (`posterUrl`, `logoUrl`, `StreamingOffer.url`) valideres i provider-mappingen: kun `https:`-URL-er slippes gjennom, alt annet mappes til `null`/utelates (beskytter mot bl.a. `javascript:`-URL-er i `href`). Eksterne lenker rendres med `target="_blank"` og `rel="noopener noreferrer"`.
-- **CSP:** GitHub Pages støtter ikke egendefinerte HTTP-headere, så Content-Security-Policy settes som `<meta http-equiv>`-tag i `index.html`. Det er svakere enn en ekte header (bl.a. ingen `frame-ancestors`), men dekker det viktigste: `script-src`, `img-src` og `connect-src`. Med datakildene valgt er domenene kjent:
-  - `connect-src 'self' https://www.omdbapi.com https://api.movieofthenight.com`
-  - `img-src 'self' data: https://m.media-amazon.com https://media.movieofthenight.com` — OMDbs plakat-URL-er peker på Amazons bilde-CDN, ikke på omdbapi.com. MOTN-domenet trengs kun for logoene til strømmetjenestene.
+- **CSP:** GitHub Pages støtter ikke egendefinerte HTTP-headere, så Content-Security-Policy settes som `<meta http-equiv>`-tag i `index.html` (injisert av `cspMetaTagPlugin` i `vite.config.ts`, kun ved build). Det er svakere enn en ekte header (bl.a. ingen `frame-ancestors`), men dekker det viktigste: `script-src`, `img-src` og `connect-src`. Med datakildene valgt er domenene kjent:
+
+  | Direktiv | Domene | Formål |
+  |---|---|---|
+  | `connect-src` | `https://www.omdbapi.com` | OMDb-søk og titteldetaljer |
+  | `connect-src` | `https://api.movieofthenight.com` | MOTN-strømmetilgjengelighet |
+  | `connect-src` | `https://firestore.googleapis.com` | Watchlist-lesing/-skriving via `firebase/firestore/lite` (REST) |
+  | `connect-src` | `https://identitytoolkit.googleapis.com` | Anonym Firebase Auth-innlogging (`signInAnonymously`) |
+  | `connect-src` | `https://securetoken.googleapis.com` | Fornyelse av Firebase Auth-tokens |
+  | `img-src` | `https://m.media-amazon.com` | OMDbs plakat-URL-er (Amazons bilde-CDN, ikke omdbapi.com) |
+  | `img-src` | `https://media.movieofthenight.com` | Strømmetjenestenes logoer |
+  | `style-src` / `font-src` | `https://fonts.googleapis.com` / `https://fonts.gstatic.com` | Google Fonts (Space Grotesk/Manrope, se [design.md](./design.md)) |
+
+  De tre Firebase-domenene ble lagt til i DB-migreringen (issue A) og gir ingen ekte trafikk før `firebaseClient.ts` faktisk tas i bruk (fra og med issue B).
 - **Avhengigheter:** `npm audit` kjøres i CI; sårbarheter på høy/kritisk alvorlighetsgrad brekker bygget.
 
 ## Deploy (GitHub Pages)
@@ -393,3 +505,6 @@ Workflowen (`.github/workflows/ci.yml`) kjører lint + test + `npm audit` på hv
 - **Talesøk sender lyd til tredjepart:** Chromes `SpeechRecognition` sender lydopptaket til Googles servere for gjenkjenning. Akseptert risiko for et personlig verktøy — talesøk er dessuten valgfritt, tekstsøk er alltid tilgjengelig.
 - **Watchlisten nullstilles ved API-byttet i fase 10:** `mediaId` er `mock-…` i fase 2–9 og matcher ingen IMDb-ID når `CompositeMediaProvider` tas i bruk. Dette er en bevisst akseptert konsekvens (innholdet fra fase 2–9 er uansett testdata); data-versjonen bumpes da til `watchlist:v2:data:` som en éngangs, bevisst sletting. Det bygges ingen migrasjonslogikk. **Dette er en engangshendelse:** etter fase 10 er `mediaId` en IMDb-ID, som er stabil på tvers av datakilder — bytter man senere ut OMDb eller MOTN, overlever watchlisten.
 - **Serie-granularitet:** «sett»-status gjelder hele tittelen — for serier finnes ingen sporing per sesong/episode. Bevisst v1-avgrensning, ikke en forglemmelse.
+- **Firebase-kvoter:** Spark-planen (gratisnivået) har rundhåndede, men reelle daglige kvoter for Firestore-lesing/-skriving og Auth-operasjoner. Det bygges ingen egen kvoteteller eller -varsling i denne runden — samme holdning som til OMDb/MOTN-kvotene over. Relevant kun ved uventet høyt trafikkvolum, ikke ved normal enkeltbruker-bruk.
+- **Anonym identitet er enhetsbundet, ikke kontobundet:** se [Identitet og datalagring](#identitet-og-datalagring-firebase). En ny nettleserprofil, enhet eller ryddet nettleserdata gir en helt ny, tom identitet — det finnes ingen gjenopprettingsmekanisme før konto-linking (fremtidig, ikke-implementert oppgave) bygges. Dette er en bevisst avgrensning for denne runden av DB-migreringen, ikke en forglemmelse.
+- **Migreringen bevarer data, i motsetning til fase 10s nullstilling:** engangsmigreringen av eksisterende `localStorage`-watchlist til Firestore (se [Identitet og datalagring](#identitet-og-datalagring-firebase)) er et bevisst valg om å *beholde* brukerens data inn i den nye databasen (lokal versjon vinner ved konflikt), til forskjell fra den bevisste nullstillingen som ble gjort ved API-byttet i fase 10 (se punktet over). Kjent, akseptert kant: to faner/vinduer som begge forsøker migrering eller vanlig watchlist-synk samtidig kan overskrive hverandre (samme «flere faner»-begrensning som resten av watchlist-skrivingen, se [State management](#state-management)) — dette er ikke fikset, og ikke planlagt fikset i v1.

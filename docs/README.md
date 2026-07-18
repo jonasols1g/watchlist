@@ -2,7 +2,7 @@
 
 `watchlist` er en nettapplikasjon for å slå opp filmer og serier, se informasjon om dem (bilde, beskrivelse, sjanger, IMDb-score, Rotten Tomatoes-score, strømmetjenester) og holde en personlig oversikt over hva man planlegger å se og hva man har sett.
 
-Appen er **100 % klient-side** — det finnes ingen backend. All state (watchlist og cache av søk/oppslag) lagres i nettleserens `localStorage`. Data hentes fra to API-er som begge kalles direkte fra nettleseren: **OMDb** for søk og titteldata, og **Movie of the Night** for strømmetilgjengelighet (se [Datakilder](./architecture.md#datakilder)).
+Appen er **100 % klient-side** — det finnes ingen server vi selv drifter. Cache av søk/oppslag lagres i nettleserens `localStorage`. Watchlisten persisteres i **Firebase/Firestore** under en usynlig, anonym Firebase-auth-identitet (i tillegg til en lokal `localStorage`-kopi), se [Identitet og datalagring](./architecture.md#identitet-og-datalagring-firebase). Titteldata hentes fra to API-er som begge kalles direkte fra nettleseren: **OMDb** for søk og titteldata, og **Movie of the Night** for strømmetilgjengelighet (se [Datakilder](./architecture.md#datakilder)).
 
 ## Dokumenter
 
@@ -20,7 +20,8 @@ Oppgavesporing skjer i GitHub-prosjektet [«Watchlist»](https://github.com/user
 | Rammeverk | React + TypeScript + Vite |
 | Styling | Tailwind CSS |
 | Routing | React Router |
-| Lagring | `localStorage` (både watchlist og cache) |
+| Lagring | Firebase/Firestore (watchlist, under anonym auth-identitet) + `localStorage` (cache og lokal watchlist-kopi) |
+| Identitet | Usynlig anonym Firebase Auth — ingen innloggings-UI, enhetsbundet (ikke kontobundet) i denne runden |
 | Talesøk | Web Speech API (`lang: 'en-US'`), med fallback til tekstsøk |
 | Søke-trigger | Eksplisitt submit (Enter/knapp) — ikke søk-mens-du-skriver |
 | Datakilde | OMDb (søk, beskrivelse, sjanger, plakat, IMDb-/RT-score) + Movie of the Night (strømmetjenester), abstrahert bak et `MediaProvider`-interface |
