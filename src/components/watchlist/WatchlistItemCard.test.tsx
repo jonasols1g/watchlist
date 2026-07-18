@@ -8,6 +8,7 @@ import {
 } from "../../context/WatchlistContext";
 import { createMediaSummary } from "../../test/fixtures/media.fixtures";
 import { createWatchlistItem } from "../../test/fixtures/watchlist.fixtures";
+import { createMockWatchlistStorage } from "../../test/mocks/createMockWatchlistStorage";
 import type { WatchlistItem } from "../../types/watchlist";
 import { DATA_KEY_PREFIX } from "../../utils/storageKeys";
 import { WatchlistItemCard } from "./WatchlistItemCard";
@@ -30,7 +31,10 @@ function Harness() {
 function renderCard(item: WatchlistItem = createWatchlistItem()) {
   localStorage.setItem(WATCHLIST_KEY, JSON.stringify([item]));
   return render(
-    <WatchlistProvider>
+    // `userId={null}` — disse testene dreier seg om lokal
+    // localStorage-tilstand, ikke Firestore-synk (se
+    // `WatchlistContext.test.tsx` for det).
+    <WatchlistProvider storage={createMockWatchlistStorage()} userId={null}>
       <MemoryRouter>
         <Harness />
       </MemoryRouter>

@@ -1,6 +1,6 @@
 import { initializeApp, type FirebaseApp, type FirebaseOptions } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { initializeFirestore, type Firestore } from "firebase/firestore";
+import { getFirestore, type Firestore } from "firebase/firestore/lite";
 
 /**
  * Sammensetningsrot for Firebase (DB-migrering, issue A — se
@@ -20,34 +20,37 @@ import { initializeFirestore, type Firestore } from "firebase/firestore";
  * `AuthContext` (issue B) importerer denne filen ubetinget fra `App.tsx`,
  * så siden issue B er den nå reelt i bruk i produksjonskoden.
  *
- * `experimentalForceLongPolling: true`: Firestores WebChannel-transport
- * holder som standard responser åpne i påvente av mer data fra backend
- * (strømming), se `FirestoreSettings.experimentalForceLongPolling` i
- * `@firebase/firestore`s typedefinisjoner: «Each response from the backend
- * will be closed immediately after the backend sends data (by default
- * responses are kept open in case the backend has more data to send)».
- * Åpne, strømmende responser er upraktisk å stubbe med Playwrights
- * `page.route()`, som er bygget for å fullføre ett komplett
- * request/response-par om gangen — samme begrensning som begrunnet
- * CORS-verifiseringen i fase 10 (se docs/architecture.md). Med
- * `experimentalForceLongPolling: true` lukkes hver respons umiddelbart
- * etter at backend har sendt data, og trafikken blir dermed ordinære,
- * diskrete HTTP-kall som `page.route()` kan avskjære og besvare
- * forutsigbart.
+ * `firebase/firestore/lite` (ikke full `firebase/firestore`) — revidert
+ * vurdering fra issue C (DB-migrering, se
+ * docs/plans/watchlist-database-migrering.md#arkitektur), som er nettopp
+ * runden der antagelsen under issue A ble empirisk verifisert mot et ekte
+ * Firebase-prosjekt for første gang:
  *
- * SDK-ens standardinnstilling siden v9.22 (`experimentalAutoDetectLongPolling:
- * true`) faller riktignok *også* tilbake til long-polling, men kun når den
- * *oppdager* problemer (typisk bufrende proxyer/antivirus) — i et rent
- * Playwright/headless-Chromium-testmiljø uten slike mellomledd er det ingen
- * garanti for at auto-deteksjonen faktisk velger long-polling fremfor
- * strømming. Eksplisitt `experimentalForceLongPolling: true` gjør derfor
- * transportvalget deterministisk uavhengig av miljø, slik at E2E-stubbing
- * er forutsigbar. Konklusjonen er en vurdering av SDK-dokumentasjonen/-typene
- * (ingen ekte Firebase-prosjekt finnes ennå til å verifisere mot en reell
- * backend, se issue A i docs/plans/watchlist-database-migrering.md) — se
- * PR-beskrivelsen for full begrunnelse. Faktisk E2E-stubbing av
- * Firestore-trafikk bygges i en senere issue (C), når `WatchlistStorage`
- * faktisk tas i bruk.
+ * Issue A antok (uten et ekte prosjekt å teste mot) at
+ * `experimentalForceLongPolling: true` på den fulle `firebase/firestore`-
+ * klienten ville gjøre trafikken til «ordinære, diskrete HTTP-kall» som
+ * Playwrights `page.route()` kunne avskjære forutsigbart. Empirisk
+ * verifisering i issue C (nettverkslogg mot det ekte prosjektet, se
+ * PR-beskrivelsen) motbeviste dette: selv med `experimentalForceLongPolling`
+ * satt, bruker den fulle SDK-en fortsatt et stateful WebChannel-sesjons-
+ * protokoll (`RID`/`SID`/`AID`/`gsessionid`, håndtrykk, strømtokens) for
+ * *alle* operasjoner — inkludert engangs `getDocs`/`setDoc`, som internt
+ * ruter via de samme `Listen`/`Write`-kanalene som ekte realtime-lyttere
+ * bruker. Denne sesjonsprotokollen er upraktisk å stubbe pålitelig med
+ * `page.route()`, som svarer på enkeltstående request/response-par, ikke en
+ * flertrinns håndtrykk-sekvens.
+ *
+ * `WatchlistStorage` bruker aldri realtime-lyttere (`onSnapshot`) — kun
+ * engangs `getDoc(s)`/`setDoc`/`updateDoc`/`deleteDoc` (se
+ * `FirestoreWatchlistStorage.ts`). Firestore Lite-SDK-en
+ * (`firebase/firestore/lite`) er bygget nøyaktig for dette bruksmønsteret:
+ * den mangler støtte for realtime-lyttere/offline-persistens, og bruker i
+ * stedet Firestores vanlige REST-API direkte (ett `fetch`-kall per
+ * operasjon) — verifisert empirisk i issue C til å produsere ordinære,
+ * stubbare HTTP-kall (se `e2e/fixtures/firestoreStub.ts`). Ingen
+ * `experimentalForceLongPolling`-innstilling trengs eller finnes for Lite-
+ * klienten. Se PR-beskrivelsen for full begrunnelse og eksempel på fanget
+ * nettverkstrafikk.
  */
 const firebaseConfig: FirebaseOptions = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -62,6 +65,4 @@ export const firebaseApp: FirebaseApp = initializeApp(firebaseConfig);
 
 export const auth: Auth = getAuth(firebaseApp);
 
-export const firestore: Firestore = initializeFirestore(firebaseApp, {
-  experimentalForceLongPolling: true,
-});
+export const firestore: Firestore = getFirestore(firebaseApp);

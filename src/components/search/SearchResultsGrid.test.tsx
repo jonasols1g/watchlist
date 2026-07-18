@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { WatchlistProvider } from "../../context/WatchlistContext";
 import { createMediaSummary } from "../../test/fixtures/media.fixtures";
+import { createMockWatchlistStorage } from "../../test/mocks/createMockWatchlistStorage";
 import { SearchResultsGrid } from "./SearchResultsGrid";
 
 describe("SearchResultsGrid", () => {
@@ -13,7 +14,7 @@ describe("SearchResultsGrid", () => {
     ];
 
     render(
-      <WatchlistProvider>
+      <WatchlistProvider storage={createMockWatchlistStorage()} userId={null}>
         <MemoryRouter>
           <SearchResultsGrid results={results} />
         </MemoryRouter>
@@ -27,7 +28,7 @@ describe("SearchResultsGrid", () => {
 
   it("viser en tom liste uten treff", () => {
     render(
-      <WatchlistProvider>
+      <WatchlistProvider storage={createMockWatchlistStorage()} userId={null}>
         <MemoryRouter>
           <SearchResultsGrid results={[]} />
         </MemoryRouter>

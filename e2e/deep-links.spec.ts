@@ -1,17 +1,20 @@
 import { expect, test } from "@playwright/test";
 import { registerApiStubs } from "./fixtures/apiStubs.ts";
 import { registerFirebaseAuthStub } from "./fixtures/firebaseAuthStub.ts";
+import { registerFirestoreStub } from "./fixtures/firestoreStub.ts";
 
 // Fase 10: se e2e/search.spec.ts for hvorfor dette `beforeEach`-kallet er
 // eneste endring i denne filen (kobler inn page.route-stubbing av
 // OMDb/MOTN — kun relevant for /title/:id-testen pga. `getDetails`; de
 // andre testene gjør ingen kall mot MediaProvider). Selve testene er
 // uendret fra fase 9.
-// DB-migrering issue B: se e2e/fixtures/firebaseAuthStub.ts — alle sider
-// kaller nå AuthContext ved mount, uavhengig av rute.
+// DB-migrering issue B/C: se e2e/fixtures/firebaseAuthStub.ts og
+// e2e/fixtures/firestoreStub.ts — alle sider kaller nå AuthContext og
+// WatchlistContext (Firestore-hydrering) ved mount, uavhengig av rute.
 test.beforeEach(async ({ page }) => {
   await registerApiStubs(page);
   await registerFirebaseAuthStub(page);
+  await registerFirestoreStub(page);
 });
 
 // Verifiserer at hver rute fungerer når den lastes direkte (dyplenke) og ved

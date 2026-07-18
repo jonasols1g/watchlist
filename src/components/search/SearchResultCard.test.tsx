@@ -3,11 +3,12 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { WatchlistProvider } from "../../context/WatchlistContext";
 import { createMediaSummary } from "../../test/fixtures/media.fixtures";
+import { createMockWatchlistStorage } from "../../test/mocks/createMockWatchlistStorage";
 import { SearchResultCard } from "./SearchResultCard";
 
 function renderCard(media: ReturnType<typeof createMediaSummary>) {
   return render(
-    <WatchlistProvider>
+    <WatchlistProvider storage={createMockWatchlistStorage()} userId={null}>
       <MemoryRouter>
         <SearchResultCard media={media} />
       </MemoryRouter>

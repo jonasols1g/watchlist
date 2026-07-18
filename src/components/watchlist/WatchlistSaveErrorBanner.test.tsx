@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMediaSummary } from "../../test/fixtures/media.fixtures";
+import { createMockWatchlistStorage } from "../../test/mocks/createMockWatchlistStorage";
 import { DATA_KEY_PREFIX } from "../../utils/storageKeys";
 
 const WATCHLIST_KEY = `${DATA_KEY_PREFIX}items`;
@@ -49,7 +50,7 @@ describe("WatchlistSaveErrorBanner", () => {
       await import("./WatchlistSaveErrorBanner");
 
     render(
-      <WatchlistProvider>
+      <WatchlistProvider storage={createMockWatchlistStorage()} userId={null}>
         <WatchlistSaveErrorBanner />
       </WatchlistProvider>,
     );
@@ -81,7 +82,7 @@ describe("WatchlistSaveErrorBanner", () => {
 
     const user = userEvent.setup();
     render(
-      <WatchlistProvider>
+      <WatchlistProvider storage={createMockWatchlistStorage()} userId={null}>
         <WatchlistSaveErrorBanner />
         <TriggerAdd />
       </WatchlistProvider>,

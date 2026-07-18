@@ -1,21 +1,28 @@
 import { expect, test } from "@playwright/test";
 import { registerApiStubs } from "./fixtures/apiStubs.ts";
 import { registerFirebaseAuthStub } from "./fixtures/firebaseAuthStub.ts";
+import { registerFirestoreStub } from "./fixtures/firestoreStub.ts";
 
 // Fase 10: se e2e/search.spec.ts for hvorfor dette `beforeEach`-kallet er
 // eneste endring i denne filen (kobler inn page.route-stubbing av
 // OMDb/MOTN, selve testen er uendret fra fase 7).
-// DB-migrering issue B: se e2e/fixtures/firebaseAuthStub.ts — alle sider
-// kaller nå AuthContext ved mount, uavhengig av rute.
+// DB-migrering issue B/C: se e2e/fixtures/firebaseAuthStub.ts og
+// e2e/fixtures/firestoreStub.ts — alle sider kaller nå AuthContext og
+// WatchlistContext (Firestore-hydrering/write-through) ved mount.
 test.beforeEach(async ({ page }) => {
   await registerApiStubs(page);
   await registerFirebaseAuthStub(page);
+  await registerFirestoreStub(page);
 });
 
 // Watchlist kjører mot en stubbet OMDb (se e2e/fixtures/apiStubs.ts) og
-// persisterer til ekte `localStorage` i nettleseren — persistens over en
+// persisterer både til ekte `localStorage` i nettleseren og til den
+// stubbede, statefulle Firestore-"databasen" i
+// e2e/fixtures/firestoreStub.ts (DB-migrering issue C) — persistens over en
 // sideoppdatering er nettopp det enhetstester ikke fanger, og hovedgrunnen
-// til at denne E2E-testen er verdt det.
+// til at denne E2E-testen er verdt det. Siden Firestore-stubben er
+// stateful, beviser `page.reload()`-steget under at Firestore-hydreringen
+// (ikke bare `localStorage`) faktisk gjenoppretter riktig tilstand.
 test.describe("Watchlist", () => {
   test("legg til fra søkeresultat, tittelen vises under «Planlagt», bytt status til «Sett», og statusen overlever page.reload()", async ({
     page,

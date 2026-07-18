@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { registerFirebaseAuthStub } from "./fixtures/firebaseAuthStub.ts";
+import { registerFirestoreStub } from "./fixtures/firestoreStub.ts";
 
 // Triviell røyktest: verifiserer at produksjonsbygget serveres under
 // /watchlist/-understien og at appen faktisk rendrer.
@@ -7,8 +8,12 @@ import { registerFirebaseAuthStub } from "./fixtures/firebaseAuthStub.ts";
 // på enhver side — uten denne stubben ville denne testen (som ikke bruker
 // registerApiStubs) gjort et ekte Firebase-kall (se
 // e2e/fixtures/firebaseAuthStub.ts for detaljer og hvorfor).
+// DB-migrering issue C: `WatchlistContext` henter watchlisten fra Firestore
+// ved mount på samme måte, uavhengig av side (se
+// e2e/fixtures/firestoreStub.ts).
 test.beforeEach(async ({ page }) => {
   await registerFirebaseAuthStub(page);
+  await registerFirestoreStub(page);
 });
 
 test("appen laster under /watchlist/-understien", async ({ page }) => {

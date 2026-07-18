@@ -39,7 +39,13 @@ vi.mock("./services/media", () => ({
 // dette `auth/invalid-api-key` og feller hele testfila. Denne modultesten
 // skal aldri gjøre ekte Firebase-kall, så begge modulene mockes til enkle
 // testdobler, tilsvarende mønsteret i AuthContext.test.tsx.
-vi.mock("./services/auth/firebaseClient", () => ({ auth: {} }));
+// `firestore: {}` trengs også (DB-migrering issue C):
+// `services/storage/index.ts` sin sammensetningsrot importerer `firestore`
+// fra samme modul for å konstruere `FirestoreWatchlistStorage` — den
+// instansen brukes aldri reelt her siden `onAuthStateChanged` under aldri
+// trigger callbacken (userId forblir `null`), men modulen må fortsatt
+// eksportere noe importerbart.
+vi.mock("./services/auth/firebaseClient", () => ({ auth: {}, firestore: {} }));
 vi.mock("firebase/auth", () => ({
   onAuthStateChanged: () => () => {},
   signInAnonymously: () => Promise.resolve(),

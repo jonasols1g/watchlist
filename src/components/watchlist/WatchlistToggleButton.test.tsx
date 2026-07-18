@@ -3,11 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { WatchlistProvider } from "../../context/WatchlistContext";
 import { createMediaSummary } from "../../test/fixtures/media.fixtures";
+import { createMockWatchlistStorage } from "../../test/mocks/createMockWatchlistStorage";
 import { WatchlistToggleButton } from "./WatchlistToggleButton";
 
 function renderButton(media = createMediaSummary({ id: "mock-movie-1" })) {
   return render(
-    <WatchlistProvider>
+    // `userId={null}` — Firestore-synk dekkes av `WatchlistContext.test.tsx`.
+    <WatchlistProvider storage={createMockWatchlistStorage()} userId={null}>
       <WatchlistToggleButton media={media} />
     </WatchlistProvider>,
   );

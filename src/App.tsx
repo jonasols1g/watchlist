@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Footer } from "./components/layout/Footer";
 import { NavBar } from "./components/layout/NavBar";
 import { WatchlistSaveErrorBanner } from "./components/watchlist/WatchlistSaveErrorBanner";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { MediaProviderProvider } from "./context/MediaProviderContext";
 import { WatchlistProvider } from "./context/WatchlistContext";
 import { HomePage } from "./routes/HomePage";
@@ -10,12 +11,29 @@ import { NotFoundPage } from "./routes/NotFoundPage";
 import { TitleDetailPage } from "./routes/TitleDetailPage";
 import { WatchlistPage } from "./routes/WatchlistPage";
 import { mediaProvider } from "./services/media";
+import { watchlistStorage } from "./services/storage";
+
+/**
+ * Kobler `userId` fra `AuthContext` (den anonyme Firebase-sesjonen) inn i
+ * `WatchlistProvider` (DB-migrering issue C). En liten mellomkomponent er
+ * nødvendig siden `useAuth()` bare kan brukes innenfor `AuthProvider`, som
+ * må ligge utenfor `WatchlistProvider` i treet (se
+ * docs/plans/watchlist-database-migrering.md#identitet-authcontext).
+ */
+function AuthenticatedWatchlistProvider({ children }: { children: ReactNode }) {
+  const { userId } = useAuth();
+  return (
+    <WatchlistProvider storage={watchlistStorage} userId={userId}>
+      {children}
+    </WatchlistProvider>
+  );
+}
 
 export function App() {
   return (
     <MediaProviderProvider provider={mediaProvider}>
       <AuthProvider>
-        <WatchlistProvider>
+        <AuthenticatedWatchlistProvider>
           <BrowserRouter basename={import.meta.env.BASE_URL}>
             {/*
               NavBar er en fast bunn-fanebar (78px, se
@@ -34,7 +52,7 @@ export function App() {
             </main>
             <NavBar />
           </BrowserRouter>
-        </WatchlistProvider>
+        </AuthenticatedWatchlistProvider>
       </AuthProvider>
     </MediaProviderProvider>
   );

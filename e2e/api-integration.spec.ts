@@ -6,16 +6,19 @@ import {
   THE_MATRIX_ID,
 } from "./fixtures/apiStubs.ts";
 import { registerFirebaseAuthStub } from "./fixtures/firebaseAuthStub.ts";
+import { registerFirestoreStub } from "./fixtures/firestoreStub.ts";
 
 // Dekker fase 10s egne E2E-krav (docs/dev-tasks.md): scenarioer som er
 // spesifikke for den ekte OMDb-/MOTN-integrasjonen, og som derfor ikke
 // fantes i fase 5/7/9s spec-er. Se e2e/fixtures/apiStubs.ts for
 // stub-dataene.
 test.describe("Ekte API-integrasjon (stubbet)", () => {
-  // DB-migrering issue B: se e2e/fixtures/firebaseAuthStub.ts — uten denne
-  // ville hver test gjort et ekte Firebase Anonymous Auth-kall.
+  // DB-migrering issue B/C: se e2e/fixtures/firebaseAuthStub.ts og
+  // e2e/fixtures/firestoreStub.ts — uten disse ville hver test gjort ekte
+  // Firebase Auth-/Firestore-kall.
   test.beforeEach(async ({ page }) => {
     await registerFirebaseAuthStub(page);
+    await registerFirestoreStub(page);
   });
 
   test("detaljside med MOTN-404 rendres komplett på OMDb-data, med tom strømme-tilstand", async ({

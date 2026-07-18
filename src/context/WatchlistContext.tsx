@@ -2,12 +2,13 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
-  useReducer,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import type { WatchlistStorage } from "../services/storage/WatchlistRemoteStorage";
 import {
   loadWatchlistFromStorage,
   saveWatchlistToStorage,
@@ -57,6 +58,128 @@ export function watchlistReducer(
   }
 }
 
+/** En ren funksjon som anvender/reverserer nøyaktig én handlings egen effekt
+ * på et hvilket som helst gitt datasett — brukt i stedet for å
+ * erstatte/gjenopprette hele arrayen med et gammelt snapshot, slik at
+ * senere, uavhengige handlinger på andre titler aldri klippes bort (se
+ * PR #23-reviewen). */
+type ItemsPatch = (items: WatchlistItem[]) => WatchlistItem[];
+
+/**
+ * Beregner en presis "angre"-patch for `action`, gitt tilstanden rett *før*
+ * den ble anvendt (`before`). Brukes ved feilet Firestore-skriving: i
+ * stedet for å rulle hele tilstanden tilbake til `before` (som ville slettet
+ * enhver annen, uavhengig handling som har lykkes i mellomtiden), reverserer
+ * denne patchen kun `action`s egen effekt på tilstanden slik den faktisk ser
+ * ut *nå* (på anvendelsestidspunktet for patchen, ikke på kalltidspunktet).
+ */
+function computeUndoPatch(
+  action: WatchlistAction,
+  before: WatchlistItem[],
+): ItemsPatch {
+  switch (action.type) {
+    case "ADD": {
+      const existedBefore = before.some(
+        (item) => item.mediaId === action.item.mediaId,
+      );
+      if (existedBefore) {
+        // Idempotent no-op-ADD (tittelen fantes allerede) — denne
+        // handlingen la ikke faktisk til noe, så det er ingenting å angre.
+        return (items) => items;
+      }
+      return (items) =>
+        items.filter((item) => item.mediaId !== action.item.mediaId);
+    }
+
+    case "REMOVE": {
+      const removedItem = before.find(
+        (item) => item.mediaId === action.mediaId,
+      );
+      if (removedItem === undefined) {
+        // Fantes ikke fra før (no-op-REMOVE) — ingenting å gjenopprette.
+        return (items) => items;
+      }
+      return (items) =>
+        items.some((item) => item.mediaId === removedItem.mediaId)
+          ? items
+          : [...items, removedItem];
+    }
+
+    case "SET_STATUS": {
+      const previousItem = before.find(
+        (item) => item.mediaId === action.mediaId,
+      );
+      if (previousItem === undefined) {
+        return (items) => items;
+      }
+      return (items) =>
+        items.map((item) =>
+          item.mediaId === action.mediaId
+            ? {
+                ...item,
+                status: previousItem.status,
+                watchedAt: previousItem.watchedAt,
+              }
+            : item,
+        );
+    }
+
+    default:
+      return (items) => items;
+  }
+}
+
+/**
+ * Beregner en presis "gjør om"-patch for `action`, gitt tilstanden rett
+ * *etter* at den ble anvendt (`after`). Brukes til å spille av handlinger
+ * som ble utført mens en Firestore-henting var underveis, oppå selve
+ * hentingsresultatet — i stedet for at hentingen ubetinget overskriver dem
+ * (se PR #23-reviewen). Bruker det allerede beregnede `after`-datasettet
+ * (ikke reduceren på nytt) slik at f.eks. `watchedAt`-tidsstempler forblir
+ * nøyaktig de samme som da handlingen faktisk skjedde.
+ */
+function computeRedoPatch(
+  action: WatchlistAction,
+  after: WatchlistItem[],
+): ItemsPatch {
+  switch (action.type) {
+    case "ADD": {
+      const addedItem = action.item;
+      return (items) =>
+        items.some((item) => item.mediaId === addedItem.mediaId)
+          ? items
+          : [...items, addedItem];
+    }
+
+    case "REMOVE": {
+      const { mediaId } = action;
+      return (items) => items.filter((item) => item.mediaId !== mediaId);
+    }
+
+    case "SET_STATUS": {
+      const updatedItem = after.find(
+        (item) => item.mediaId === action.mediaId,
+      );
+      if (updatedItem === undefined) {
+        return (items) => items;
+      }
+      return (items) =>
+        items.map((item) =>
+          item.mediaId === action.mediaId
+            ? {
+                ...item,
+                status: updatedItem.status,
+                watchedAt: updatedItem.watchedAt,
+              }
+            : item,
+        );
+    }
+
+    default:
+      return (items) => items;
+  }
+}
+
 export interface WatchlistContextValue {
   items: WatchlistItem[];
   addToWatchlist: (media: MediaSummary) => void;
@@ -64,7 +187,17 @@ export interface WatchlistContextValue {
   setStatus: (mediaId: string, status: WatchlistStatus) => void;
   isInWatchlist: (mediaId: string) => boolean;
   getStatus: (mediaId: string) => WatchlistStatus | null;
-  /** `true` når siste lagringsforsøk mot `localStorage` feilet (se docs/design.md#watchlist-ux). */
+  /**
+   * `true` under den *første* hentingen fra Firestore (se
+   * docs/plans/watchlist-database-migrering.md#arkitektur) — ikke satt igjen
+   * ved påfølgende bakgrunnsoppfriskninger (f.eks. `online`-gjenoppkobling).
+   */
+  isLoading: boolean;
+  /**
+   * `true` når siste lagringsforsøk feilet — enten mot `localStorage` (full
+   * lagringsplass selv etter cache-opprydding) eller mot Firestore
+   * (nettverksfeil), se docs/design.md#watchlist-ux.
+   */
   saveError: boolean;
   dismissSaveError: () => void;
 }
@@ -73,73 +206,238 @@ const WatchlistContext = createContext<WatchlistContextValue | null>(null);
 
 export interface WatchlistProviderProps {
   children: ReactNode;
+  /**
+   * `WatchlistStorage`-instansen som brukes som skriveputt mot en delt
+   * database (Firestore i produksjon, en testdobbel i tester) — injisert
+   * eksplisitt fremfor konsumert fra en nestet context, samme DI-mønster som
+   * `MediaProviderProvider.provider` (se docs/architecture.md#state-
+   * management), for å gjøre testdobler trivielle å bruke.
+   */
+  storage: WatchlistStorage;
+  /**
+   * IMDb-uavhengig bruker-ID fra `AuthContext` (anonym Firebase-sesjon).
+   * `null` inntil den anonyme sesjonen er klar (eller ved en autentiserings-
+   * feil) — writes går da kun til den lokale skriveputten (`localStorage`),
+   * ingen Firestore-synk skjer før `userId` er satt (se v1-avgrensningen i
+   * docs/plans/watchlist-database-migrering.md#arkitektur — ingen full
+   * offline-synk-kø bygges).
+   */
+  userId: string | null;
 }
 
 /**
  * Global watchlist-state (se «State management» i docs/architecture.md):
- * React Context + `useReducer`, persistert til `localStorage` via
- * `watchlistStorage` på hver endring. Skriving som feiler (full
- * lagringsplass selv etter cache-opprydding) tapes aldri stille — `saveError`
- * eksponeres slik at UI kan vise en synlig feilmelding.
+ * React Context + lokal `items`-state, med optimistic update + write-through
+ * mot to lag — synkront til `localStorage` (uendret, se
+ * `services/storage/watchlistStorage.ts`) og asynkront til
+ * `WatchlistStorage` (Firestore i produksjon, DB-migrering issue C).
  *
- * Persisteringen skjer synkront inne i `applyAction` (kalt fra
- * add/remove/setStatus), *ikke* i en `useEffect` som reagerer på `items`:
- * `items` speiles i en ref som oppdateres i samme steg som reduceren kjøres,
- * slik at flere handlinger i samme hendelse alltid lagrer det korrekte,
- * akkumulerte resultatet — og et separat `setSaveError`-kall i en effekt
- * (som ville trigget en unødvendig ekstra render) unngås.
+ * Mønster per handling (`applyAction`):
+ * 1. `watchlistReducer` (ren funksjon, uendret siden før DB-migreringen)
+ *    beregner neste tilstand og den settes umiddelbart (optimistic update).
+ * 2. Neste tilstand skrives synkront til `localStorage`.
+ * 3. Den tilsvarende operasjonen sendes asynkront til `storage`
+ *    (`WatchlistStorage`). Feiler den, angres *kun denne handlingens egen
+ *    effekt* (via `computeUndoPatch`, anvendt på gjeldende `itemsRef.current`
+ *    på feiltidspunktet — ikke et gammelt snapshot), og `saveError` settes.
+ *    Se PR #23-reviewen: å erstatte hele tilstanden med et snapshot tatt ved
+ *    kalltidspunktet kunne slette en senere, uavhengig, vellykket handling
+ *    på en annen tittel.
+ *
+ * Tilsvarende presisjon gjelder `hydrate()`: handlinger utført mens den
+ * *initiale* Firestore-hentingen er underveis spilles av oppå
+ * hentingsresultatet (via `computeRedoPatch`) i stedet for å bli overskrevet
+ * av det.
+ *
+ * `items` speiles i en ref (`itemsRef`) som oppdateres i samme steg som
+ * state settes, slik at flere handlinger i rask rekkefølge alltid bygger
+ * videre på det korrekte, akkumulerte resultatet (ikke en stale closure over
+ * `items`).
  */
-export function WatchlistProvider({ children }: WatchlistProviderProps) {
-  const [items, dispatch] = useReducer(
-    watchlistReducer,
-    undefined,
-    loadWatchlistFromStorage,
-  );
-  // Speiler kun det som faktisk skrives via `applyAction` under — *ikke*
-  // synkronisert med `items` på hver render (det ville vært en
-  // ref-mutasjon under selve renderingen, som React (og
-  // `eslint-plugin-react-hooks`) ikke tillater). Alle endringer går uten
-  // unntak via `applyAction`, som holder `itemsRef.current` og React sin
-  // egen reducer-tilstand i lockstep.
+export function WatchlistProvider({
+  children,
+  storage,
+  userId,
+}: WatchlistProviderProps) {
+  const [items, setItems] = useState<WatchlistItem[]>(loadWatchlistFromStorage);
   const itemsRef = useRef(items);
 
+  const [isLoading, setIsLoading] = useState(true);
   const [saveError, setSaveError] = useState(false);
+  const hasHydratedOnceRef = useRef(false);
 
-  const applyAction = useCallback((action: WatchlistAction) => {
-    const next = watchlistReducer(itemsRef.current, action);
-    itemsRef.current = next;
-    dispatch(action);
-    const ok = saveWatchlistToStorage(next);
-    setSaveError(!ok);
-  }, []);
+  // Handlinger utført mens en henting er underveis må spilles av oppå
+  // hentingsresultatet i stedet for å bli overskrevet av det (se
+  // docstringen over og PR #23-reviewen).
+  const isHydratingRef = useRef(false);
+  const pendingPatchesRef = useRef<ItemsPatch[]>([]);
+
+  const hydrate = useCallback(() => {
+    if (userId === null) {
+      return;
+    }
+
+    const isInitialHydration = !hasHydratedOnceRef.current;
+    if (isInitialHydration) {
+      setIsLoading(true);
+    }
+
+    isHydratingRef.current = true;
+    pendingPatchesRef.current = [];
+
+    storage
+      .load(userId)
+      .then((remoteItems) => {
+        hasHydratedOnceRef.current = true;
+        isHydratingRef.current = false;
+
+        // Spill av handlinger som ble utført mens hentingen var underveis,
+        // oppå det hentede resultatet — dekker racen der f.eks. et
+        // addToWatchlist-kall midt i en pågående henting ellers ville blitt
+        // usynlig igjen idet hentingen resolver med et datasett fra før
+        // handlingen.
+        const patches = pendingPatchesRef.current;
+        pendingPatchesRef.current = [];
+        const merged = patches.reduce(
+          (acc, patch) => patch(acc),
+          remoteItems,
+        );
+
+        itemsRef.current = merged;
+        setItems(merged);
+        if (isInitialHydration) {
+          setIsLoading(false);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error(
+          "[watchlist] Kunne ikke hente watchlisten fra Firestore",
+          error,
+        );
+        hasHydratedOnceRef.current = true;
+        isHydratingRef.current = false;
+        // Hentingen feilet — lokal state (allerede oppdatert optimistisk av
+        // eventuelle handlinger underveis) er urørt, så det er ingenting å
+        // spille av. Nullstill likevel køen for å unngå at eldre patcher
+        // (med potensielt utdaterte tidsstempler) gjenbrukes av en senere,
+        // vellykket henting.
+        pendingPatchesRef.current = [];
+        if (isInitialHydration) {
+          setIsLoading(false);
+        }
+        setSaveError(true);
+      });
+  }, [storage, userId]);
+
+  // Første henting (eller ny henting dersom userId/storage endres — i
+  // praksis kun når den anonyme sesjonen blir klar).
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  // v1-avgrensning (se docs/plans/watchlist-database-migrering.md#arkitektur):
+  // ingen full offline-synk-kø, men en enkel gjenoppkoblings-retry — når
+  // nettleseren melder at den er tilbake online, hentes watchlisten på nytt
+  // fra Firestore (harmløst å gjøre selv om forrige henting lyktes).
+  useEffect(() => {
+    window.addEventListener("online", hydrate);
+    return () => {
+      window.removeEventListener("online", hydrate);
+    };
+  }, [hydrate]);
+
+  const applyAction = useCallback(
+    (
+      action: WatchlistAction,
+      syncToRemote: (uid: string, next: WatchlistItem[]) => Promise<void>,
+    ) => {
+      const previous = itemsRef.current;
+      const next = watchlistReducer(previous, action);
+      itemsRef.current = next;
+      setItems(next);
+
+      // Registrer en gjør-om-patch for denne handlingen så lenge en henting
+      // er underveis (se `hydrate()`) — samme patch-referanse gjenbrukes
+      // under for å fjerne den igjen dersom denne handlingens egen skriving
+      // feiler *før* hentingen rekker å resolve (uten dette ville en
+      // rullet-tilbake handling likevel blitt "gjort om" igjen når
+      // hentingen senere spiller av køen).
+      const redoPatchForHydration = isHydratingRef.current
+        ? computeRedoPatch(action, next)
+        : null;
+      if (redoPatchForHydration !== null) {
+        pendingPatchesRef.current = [
+          ...pendingPatchesRef.current,
+          redoPatchForHydration,
+        ];
+      }
+
+      const savedLocally = saveWatchlistToStorage(next);
+      setSaveError(!savedLocally);
+
+      if (userId === null) {
+        // Auth-sesjonen er ikke klar ennå (eller feilet) — se
+        // `WatchlistProviderProps.userId`.
+        return;
+      }
+
+      syncToRemote(userId, next).catch((error: unknown) => {
+        console.error(
+          "[watchlist] Kunne ikke lagre watchlist-endringen til Firestore — ruller tilbake",
+          error,
+        );
+        if (redoPatchForHydration !== null) {
+          pendingPatchesRef.current = pendingPatchesRef.current.filter(
+            (patch) => patch !== redoPatchForHydration,
+          );
+        }
+        // Angre kun DENNE handlingens egen effekt, anvendt på tilstanden
+        // slik den faktisk er *nå* (kan ha blitt endret av andre,
+        // uavhengige handlinger i mellomtiden) — ikke et gammelt snapshot
+        // fra kalltidspunktet (se PR #23-reviewen).
+        const undoPatch = computeUndoPatch(action, previous);
+        const rolledBack = undoPatch(itemsRef.current);
+        itemsRef.current = rolledBack;
+        setItems(rolledBack);
+        saveWatchlistToStorage(rolledBack);
+        setSaveError(true);
+      });
+    },
+    [userId],
+  );
 
   const addToWatchlist = useCallback(
     (media: MediaSummary) => {
-      applyAction({
-        type: "ADD",
-        item: {
-          mediaId: media.id,
-          media,
-          status: "planned",
-          addedAt: new Date().toISOString(),
-        },
-      });
+      const item: WatchlistItem = {
+        mediaId: media.id,
+        media,
+        status: "planned",
+        addedAt: new Date().toISOString(),
+      };
+      applyAction({ type: "ADD", item }, (uid) => storage.upsert(uid, item));
     },
-    [applyAction],
+    [applyAction, storage],
   );
 
   const removeFromWatchlist = useCallback(
     (mediaId: string) => {
-      applyAction({ type: "REMOVE", mediaId });
+      applyAction({ type: "REMOVE", mediaId }, (uid) =>
+        storage.remove(uid, mediaId),
+      );
     },
-    [applyAction],
+    [applyAction, storage],
   );
 
   const setStatus = useCallback(
     (mediaId: string, status: WatchlistStatus) => {
-      applyAction({ type: "SET_STATUS", mediaId, status });
+      applyAction({ type: "SET_STATUS", mediaId, status }, (uid, next) => {
+        const watchedAt = next.find(
+          (item) => item.mediaId === mediaId,
+        )?.watchedAt;
+        return storage.updateStatus(uid, mediaId, status, watchedAt);
+      });
     },
-    [applyAction],
+    [applyAction, storage],
   );
 
   const isInWatchlist = useCallback(
@@ -165,6 +463,7 @@ export function WatchlistProvider({ children }: WatchlistProviderProps) {
       setStatus,
       isInWatchlist,
       getStatus,
+      isLoading,
       saveError,
       dismissSaveError,
     }),
@@ -175,6 +474,7 @@ export function WatchlistProvider({ children }: WatchlistProviderProps) {
       setStatus,
       isInWatchlist,
       getStatus,
+      isLoading,
       saveError,
       dismissSaveError,
     ],
