@@ -77,3 +77,71 @@ h3 {
   -webkit-background-clip: text;
   color: transparent;
 }
+
+/* CineFind – bakgrunn 2b «Plakatvegg» (kun CSS, ingen JS/bilder)
+   HTML-struktur:
+   <div class="cf-bg">
+     <div class="cf-posters">
+       <div class="cf-poster"></div>  × 16 stk (4 kolonner × 4 rader)
+     </div>
+     <div class="cf-haze"></div>
+   </div>
+   Legg .cf-bg først i forsiden, med resten av innholdet over (position:relative; z-index:1).
+*/
+
+.cf-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #070a1c;
+  pointer-events: none;
+}
+
+.cf-posters {
+  position: absolute;
+  inset: -40px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 12px;
+  transform: rotate(-8deg) scale(1.15);
+  opacity: 0.75;
+}
+
+.cf-poster {
+  aspect-ratio: 2 / 3;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 16 fargetoner – én per flis */
+.cf-poster:nth-child(1)  { background: linear-gradient(160deg, #3b2a6e, #1a1440); }
+.cf-poster:nth-child(2)  { background: linear-gradient(160deg, #0e3a4a, #0a1e30); }
+.cf-poster:nth-child(3)  { background: linear-gradient(160deg, #5a2350, #2a1030); }
+.cf-poster:nth-child(4)  { background: linear-gradient(160deg, #26406e, #101c3a); }
+.cf-poster:nth-child(5)  { background: linear-gradient(160deg, #4a3a20, #241a0c); }
+.cf-poster:nth-child(6)  { background: linear-gradient(160deg, #1c4a3a, #0c241c); }
+.cf-poster:nth-child(7)  { background: linear-gradient(160deg, #502a2a, #281012); }
+.cf-poster:nth-child(8)  { background: linear-gradient(160deg, #2a2a5e, #12122e); }
+.cf-poster:nth-child(9)  { background: linear-gradient(160deg, #3a5060, #182430); }
+.cf-poster:nth-child(10) { background: linear-gradient(160deg, #5e2a44, #2c1220); }
+.cf-poster:nth-child(11) { background: linear-gradient(160deg, #20385a, #0e1a2c); }
+.cf-poster:nth-child(12) { background: linear-gradient(160deg, #463060, #201430); }
+.cf-poster:nth-child(13) { background: linear-gradient(160deg, #2e4a2e, #142214); }
+.cf-poster:nth-child(14) { background: linear-gradient(160deg, #54402a, #281e10); }
+.cf-poster:nth-child(15) { background: linear-gradient(160deg, #2a3e66, #121c32); }
+.cf-poster:nth-child(16) { background: linear-gradient(160deg, #4e2860, #241030); }
+
+/* Mørk dis over veggen for lesbarhet */
+.cf-haze {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 10, 28, 0.35) 0%,
+    rgba(7, 10, 28, 0.65) 40%,
+    rgba(7, 10, 28, 0.9)  75%,
+    #05070f 100%
+  );
+}

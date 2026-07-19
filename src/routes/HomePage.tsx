@@ -1,6 +1,7 @@
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorMessage } from "../components/common/ErrorMessage";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
+import { PosterWallBackground } from "../components/search/PosterWallBackground";
 import { SearchBar } from "../components/search/SearchBar";
 import { SearchResultsGrid } from "../components/search/SearchResultsGrid";
 import { VoiceSearchButton } from "../components/search/VoiceSearchButton";
@@ -37,45 +38,51 @@ export function HomePage() {
   }
 
   return (
-    <div className={`flex flex-col pb-28 ${isIdle ? "min-h-[65vh]" : ""}`}>
-      <h1 className="sr-only">Søk</h1>
+    <>
+      {isIdle && <PosterWallBackground />}
 
-      <SearchBar
-        onSubmit={handleSearch}
-        centered={isIdle}
-        heading={
-          isIdle ? (
-            <p
-              aria-hidden="true"
-              className="font-heading text-brand-gradient text-[26px] font-bold"
-            >
-              CineFind
-            </p>
-          ) : undefined
-        }
-        trailingAction={<VoiceSearchButton onResult={handleSearch} />}
-      />
+      <div
+        className={`flex flex-col pb-28 ${isIdle ? "relative z-10 min-h-[65vh]" : ""}`}
+      >
+        <h1 className="sr-only">Søk</h1>
 
-      <div className="mt-6">
-        {status === "loading" && <LoadingSpinner label="Søker …" />}
+        <SearchBar
+          onSubmit={handleSearch}
+          centered={isIdle}
+          heading={
+            isIdle ? (
+              <p
+                aria-hidden="true"
+                className="font-heading text-brand-gradient text-[26px] font-bold"
+              >
+                CineFind
+              </p>
+            ) : undefined
+          }
+          trailingAction={<VoiceSearchButton onResult={handleSearch} />}
+        />
 
-        {status === "error" && errorCode !== null && (
-          <ErrorMessage code={errorCode} onRetry={retry} />
-        )}
+        <div className="mt-6">
+          {status === "loading" && <LoadingSpinner label="Søker …" />}
 
-        {status === "success" && results.length === 0 && (
-          <EmptyState message="Ingen treff. Prøv et annet søk." />
-        )}
+          {status === "error" && errorCode !== null && (
+            <ErrorMessage code={errorCode} onRetry={retry} />
+          )}
 
-        {status === "success" && results.length > 0 && (
-          <>
-            <p className="text-text-muted mb-4 text-sm">
-              {results.length} treff
-            </p>
-            <SearchResultsGrid results={results} />
-          </>
-        )}
+          {status === "success" && results.length === 0 && (
+            <EmptyState message="Ingen treff. Prøv et annet søk." />
+          )}
+
+          {status === "success" && results.length > 0 && (
+            <>
+              <p className="text-text-muted mb-4 text-sm">
+                {results.length} treff
+              </p>
+              <SearchResultsGrid results={results} />
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
