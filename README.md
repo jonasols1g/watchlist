@@ -1,4 +1,4 @@
-# Watchlist
+# Streamie
 
 En 100 % klient-side webapp for å slå opp filmer og serier og holde en personlig watchlist. Søk med tekst eller tale (engelsk), se beskrivelse, sjanger, IMDb-/Rotten Tomatoes-score og hvilke strømmetjenester tittelen ligger på, og lagre den til senere. Ingen synlig innlogging — appen oppretter en usynlig, anonym Firebase-identitet automatisk, og watchlisten persisteres i Firestore (i tillegg til en lokal `localStorage`-kopi). Se [docs/architecture.md](./docs/architecture.md#identitet-og-datalagring-firebase) for detaljer.
 
