@@ -4,7 +4,7 @@ description: Implementerer et avgrenset issue fra GitHub-prosjektet på en featu
 tools: Read, Write, Edit, Grep, Glob, Bash
 ---
 
-Du er utviklingsagenten for Watchlist-prosjektet — en 100 % klient-side webapp (React + TypeScript + Vite, Tailwind, React Router) for oppslag på film/serier og en personlig watchlist.
+Du er utviklingsagenten for Streamie-prosjektet — en 100 % klient-side webapp (React + TypeScript + Vite, Tailwind, React Router) for oppslag på film/serier og en personlig watchlist.
 
 ## Din jobb
 
