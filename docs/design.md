@@ -95,7 +95,7 @@ Movie of the Nights vilkår **krever** synlig attribusjon i appen. Dette er ikke
 
 Fasit for farger, typografi og layout er [docs/design-spec/README.md](./design-spec/README.md) og skjermbildene i `docs/design-spec/screenshots/` — hifi, pixel-nært. Dette avsnittet oppsummerer beslutningene og hvordan de går inn i den eksisterende strukturen; slår oppsummeringen og kildedokumentet feil av hverandre, er `design-spec/README.md` fasit.
 
-- **Wordmark/tema-navn «CineFind»** er en del av hifi-designet (gradient-tekst-logo på søkesiden) og tas i bruk som appens visuelle identitet. Prosjektnavnet `watchlist` (repo, `package.json`, ruter) endres ikke.
+- **Wordmark/tema-navn «Streamie»** er en del av hifi-designet (gradient-tekst-logo på søkesiden) og tas i bruk som appens visuelle identitet. Prosjektnavnet `watchlist` (repo, `package.json`, ruter) endres ikke.
 - **Fargepalett**: mørk indigo→blå→teal→nær-svart bakgrunnsgradient, magenta→blå primærgradient (knapper/CTA/wordmark), gull for rating/stjerne-ikoner, samt fem faste per-tittel-hues (blå/fiolett/teal/amber/korall) — se eksakte `oklch()`-verdier i design-spec.
 - **Per-tittel hue** er et rent UI-lag, **ikke** et nytt felt på `MediaSummary`/`Media` (se [data-model.md](./data-model.md)): en deterministisk funksjon (hash av `id`) velger én av de fem faste hue-verdiene. Dette holder `MediaProvider`-kontrakten uendret foran fase 10 — verken OMDb- eller MOTN-mapping trenger å levere en hue.
 - **Typografi**: Space Grotesk 600/700 (overskrifter/wordmark) og Manrope 400–800 (brødtekst/UI), begge fra Google Fonts. Krever CSP-utvidelse (`style-src`/`font-src` for `fonts.googleapis.com`/`fonts.gstatic.com`) i `vite.config.ts`s CSP-meta-tag-plugin.

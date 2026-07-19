@@ -19,7 +19,7 @@ All screens share a 390×844 mobile viewport, a shared bottom tab bar (Søk / Wa
 - **Purpose**: Entry point. Minimal — just search and voice search, no browsing content.
 - **Layout**: Full-height column. Content area splits into two flex zones: a centered middle zone (logo + search field, vertically centered via `flex:1; justify-content:center`) and a bottom-pinned row (search button + mic button), separated so the field can sit mid-screen while the buttons stay anchored near the bottom tab bar.
 - **Components**:
-  - "CineFind" wordmark, Space Grotesk 700, 26px, gradient text fill (magenta → blue, see Design Tokens).
+  - "CineFind" wordmark, Space Grotesk 700, 26px, gradient text fill (magenta → blue, see Design Tokens). **Merknad (post-hifi, issue #46):** det gjeldende wordmark-navnet i appen er «Streamie», ikke «CineFind» — designfilen viste opprinnelig «CineFind», men navnet er siden byttet.
   - Search input (pill), background `oklch(0.3 0.06 270 / 0.4)`, 1px border `oklch(0.55 0.1 280 / 0.5)`, radius 16px, padding 14×16px. Placeholder "Søk etter film eller serie", 15px, `oklch(0.8 0.03 280)`. Left icon: simple magnifying-glass built from a circle + rotated line (no icon font).
   - Button row: primary "Søk" button (flex:1, gradient fill magenta→blue, dark text, radius 14px, 14px padding, 15px/700 bold) + circular 52px mic button (outline capsule + base line, same outline color as search icon) for voice-to-text.
 - **Bottom tab bar**: fixed, 78px, translucent surface with blur, "Søk" active (bold, magenta), "Watchlist" inactive (star icon dimmed).

@@ -55,7 +55,7 @@ export function HomePage() {
                 aria-hidden="true"
                 className="font-heading text-brand-gradient text-[26px] font-bold"
               >
-                CineFind
+                Streamie
               </p>
             ) : undefined
           }
