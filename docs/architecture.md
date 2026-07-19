@@ -488,11 +488,11 @@ export function useMediaProvider(): MediaProvider { /* ... */ }
 
 ## Deploy (GitHub Pages)
 
-Appen deployes til GitHub Pages via GitHub Actions. Fordi Pages serverer fra en understi (`https://<bruker>.github.io/watchlist/`) kreves tre ting, og alle settes opp allerede i fase 1 slik at produksjonsstier aldri divergerer fra dev:
+Appen deployes til GitHub Pages via GitHub Actions. Fordi Pages serverer fra en understi (`https://<bruker>.github.io/streamie/`) kreves tre ting, og alle settes opp allerede i fase 1 slik at produksjonsstier aldri divergerer fra dev:
 
-1. `base: '/watchlist/'` i `vite.config.ts`.
+1. `base: '/streamie/'` i `vite.config.ts`.
 2. `<BrowserRouter basename={import.meta.env.BASE_URL}>` slik at rutene fungerer under understien.
-3. **SPA-fallback:** GitHub Pages har ingen rewrite-støtte, så build-steget kopierer `dist/index.html` til `dist/404.html`. Direkte-lasting av f.eks. `/watchlist/title/tt0133093` (bokmerke, refresh) gir da riktig app — med HTTP-status 404, som er akseptabelt for et personlig verktøy uten SEO-behov.
+3. **SPA-fallback:** GitHub Pages har ingen rewrite-støtte, så build-steget kopierer `dist/index.html` til `dist/404.html`. Direkte-lasting av f.eks. `/streamie/title/tt0133093` (bokmerke, refresh) gir da riktig app — med HTTP-status 404, som er akseptabelt for et personlig verktøy uten SEO-behov.
 
 Workflowen (`.github/workflows/ci.yml`) kjører lint + test + `npm audit` på hver push, bygger, og publiserer `dist/` til Pages med `actions/deploy-pages`.
 
