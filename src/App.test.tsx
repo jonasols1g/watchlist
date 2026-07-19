@@ -93,6 +93,18 @@ describe("App", () => {
     ).toBeInTheDocument();
   });
 
+  it("viser feedback-siden på /feedback, men lenker den ikke i NavBar (issue #40 — kun direkte URL)", () => {
+    window.history.pushState({}, "", "/feedback");
+    render(<App />);
+
+    expect(
+      screen.getByRole("heading", { name: "Gi tilbakemelding" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Feedback" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("viser 404-siden for ukjente ruter og lenker tilbake til hjem", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", "/ukjent-rute");

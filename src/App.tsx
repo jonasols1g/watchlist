@@ -6,6 +6,7 @@ import { WatchlistSaveErrorBanner } from "./components/watchlist/WatchlistSaveEr
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { MediaProviderProvider } from "./context/MediaProviderContext";
 import { WatchlistProvider } from "./context/WatchlistContext";
+import { FeedbackPage } from "./routes/FeedbackPage";
 import { HomePage } from "./routes/HomePage";
 import { NotFoundPage } from "./routes/NotFoundPage";
 import { TitleDetailPage } from "./routes/TitleDetailPage";
@@ -46,6 +47,12 @@ export function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/mylist" element={<WatchlistPage />} />
                 <Route path="/title/:id" element={<TitleDetailPage />} />
+                {/*
+                  Bevisst skjult (issue #40) — ingen lenke i NavBar/Footer,
+                  nås kun via direkte URL. Se
+                  docs/plans/feedback-innsending-og-automatisk-oppfolging.md#del-a.
+                */}
+                <Route path="/feedback" element={<FeedbackPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
               <Footer />

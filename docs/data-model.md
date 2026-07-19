@@ -105,6 +105,26 @@ users/{uid}/watchlistItems/{mediaId}
 - **Security rules** (`firestore.rules`, repo-rot) håndhever at kun `request.auth.uid == userId` kan lese eller skrive et gitt brukerdokument-tre — se [architecture.md](./architecture.md#identitet-og-datalagring-firebase).
 - **Migreringsflagget** (`watchlist:v2:data:migratedToCloud`) lagres derimot ikke i Firestore — det er et rent lokalt, per-nettleserprofil flagg i `localStorage` (samme data-navnerom som selve den lokale watchlisten), se `migrateLocalWatchlistToCloud.ts`.
 
+### `feedback`-collection
+
+Ny top-level collection (issue #40, se
+[docs/plans/feedback-innsending-og-automatisk-oppfolging.md](./plans/feedback-innsending-og-automatisk-oppfolging.md#del-a))
+for innsendinger fra den skjulte `/feedback`-siden — **ikke** brukerbundet
+(i motsetning til `watchlistItems`, som ligger under `users/{uid}/`).
+`FirestoreFeedbackStorage` (`src/services/storage/FirestoreFeedbackStorage.ts`)
+skriver hvert dokument med `addDoc` (auto-generert dokument-ID — det finnes
+ingen naturlig nøkkel slik `mediaId` er for watchlisten):
+
+```
+feedback/{autoId}
+  text: string        // trimmet fritekst, 1–2000 tegn
+  score: number        // heltall 1–5
+  createdAt: string    // ISO-tidsstempel, samme mønster som addedAt i watchlistItems
+```
+
+- **Klienttypen** `FeedbackSubmission` (`src/types/feedback.ts`) omfatter kun `text` og `score` — `createdAt` settes av `FirestoreFeedbackStorage` selv ved skriving, ikke av kalleren.
+- **Security rules** (`firestore.rules`): lesing er åpen (`allow read: if true`, konsistent med appens allerede åpne tillitsmodell — anonym auth, ingen ekte kontoer). Skriving krever (anonym) auth og server-side-validering av `text` (streng, 1–2000 tegn) og `score` (heltall 1–5). Ingen `update`/`delete` — collectionen er append-only.
+
 ## `types/cache.ts`
 
 ```ts

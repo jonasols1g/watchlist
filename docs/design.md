@@ -9,9 +9,17 @@ Se [architecture.md](./architecture.md) for teknisk struktur bak sidene beskreve
 | `/` | Hjem/søk | Søkefelt (tekst + tale), resultatgrid |
 | `/mylist` | Watchlist | Faner "Planlagt" / "Sett" |
 | `/title/:id` | Detaljvisning | Full informasjon om én tittel |
+| `/feedback` | Feedback (skjult) | Fritekst + score 1–5, se under |
 | `*` | 404 | Enkel melding + lenke tilbake til hjem |
 
 `NavBar` vises på alle sider med lenker til Hjem og Watchlist. En `Footer` vises på alle sider og bærer attribusjonen (se [Attribusjon](#attribusjon)).
+
+`/feedback` er bevisst skjult (issue #40, se
+[docs/plans/feedback-innsending-og-automatisk-oppfolging.md](./plans/feedback-innsending-og-automatisk-oppfolging.md#del-a))
+— den har ingen lenke i `NavBar` eller `Footer` og nås kun via direkte URL.
+Siden lar brukeren skrive fritekst og velge en score 1–5 (radiogroup av
+stjerner), lagret i Firestore-collectionen `feedback/{autoId}` (se
+[data-model.md](./data-model.md#firestore-skjema)).
 
 ## Søkeflyt (tekst og tale)
 
