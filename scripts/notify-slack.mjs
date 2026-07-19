@@ -10,11 +10,11 @@
 // logges det til stderr og scriptet avslutter uansett med exit 0.
 
 const SENDERS = {
-  orchestrator: { username: 'Orkestrator Ole', icon_emoji: ':control_knobs:' },
-  'feature-planner': { username: 'Planlegger Pia', icon_emoji: ':compass:' },
-  dev: { username: 'Utvikler Ulrik', icon_emoji: ':hammer_and_wrench:' },
-  reviewer: { username: 'Gransker Guri', icon_emoji: ':mag:' },
-  verifier: { username: 'Godkjenner Gunnar', icon_emoji: ':white_check_mark:' },
+  orchestrator: { username: 'Orkestrator Ole' },
+  'feature-planner': { username: 'Planlegger Pia' },
+  dev: { username: 'Utvikler Ulrik' },
+  reviewer: { username: 'Gransker Guri' },
+  verifier: { username: 'Godkjenner Gunnar' },
 };
 
 function skip(reason) {
@@ -38,7 +38,7 @@ if (!webhookUrl) {
   skip('SLACK_WEBHOOK_URL er ikke satt (se .claude/settings.local.json)');
 }
 
-const text = `${sender.icon_emoji} *${sender.username}:* ${message}`;
+const text = `*${sender.username}:* ${message}`;
 
 try {
   const res = await fetch(webhookUrl, {

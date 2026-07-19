@@ -28,7 +28,7 @@ Aldri hopp over kommentaren, heller ikke når alt er i orden. Bruk én av tre st
 - **Alt fungerer, men du observerte noe ikke-blokkerende** under den manuelle flyten (f.eks. en uklar feilmelding, en kant-case som virker men føles skjør, noe som burde vurderes senere): start med `**Verifisering: bestått med forslag**`, bekreft at PR-en er klar for merge, og list forslagene separat som ikke-blokkerende.
 - **Alt i orden, ingen forslag:** start med `**Verifisering: bestått**`, bekreft kort hva som ble drevet manuelt (eller hvorfor det ble hoppet over, jf. unntaket i punkt 2) og at CI er grønn. Nevn PR-nummeret i kommentaren, siden den står på issuen og ikke på PR-en selv.
 
-Varsle deretter med konklusjonen og lenken til issue-kommentaren, f.eks.: `node scripts/notify-slack.mjs verifier '*Verifisering: bestått* for PR #<pr>. <lenke til issue-kommentar>'` (eller tilsvarende for bestått med forslag / feilet).
+Varsle deretter med konklusjonen og lenken til issue-kommentaren, med emoji kun helt til slutt i meldingen — aldri i starten: ✅ for bestått, ⚠️ for bestått med forslag, 🛑 for feilet. F.eks.: `node scripts/notify-slack.mjs verifier '*Verifisering: bestått* for PR #<pr>. <lenke til issue-kommentar> ✅'` (eller tilsvarende `... ⚠️` for bestått med forslag / `... 🛑` for feilet).
 
 ## Regler
 

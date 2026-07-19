@@ -24,7 +24,7 @@ Hver gjennomgang avsluttes med én kommentar på PR-en via `gh pr comment <nr> -
 - **Funn:** kommentaren lister funnene i synkende alvorlighet, hvert med fil, linje og hvorfor det er et problem. Start kommentaren med `**Review: endringer kreves**`.
 - **Alt i orden:** kommentaren bekrefter eksplisitt at jobben er gjort — at DoD er oppfylt og koden følger dokumentasjonen. Start kommentaren med `**Review: godkjent**`.
 
-(PR-ene opprettes av samme GitHub-bruker som deg, så `gh pr review --approve`/`--request-changes` avvises av GitHub — bruk alltid `gh pr comment`.) Varsle deretter med konklusjonen og lenken til kommentaren: `node scripts/notify-slack.mjs reviewer '*Review: godkjent* for PR #<pr>. <lenke til kommentar>'` (eller tilsvarende for endringer kreves).
+(PR-ene opprettes av samme GitHub-bruker som deg, så `gh pr review --approve`/`--request-changes` avvises av GitHub — bruk alltid `gh pr comment`.) Varsle deretter med konklusjonen og lenken til kommentaren, med emoji kun helt til slutt i meldingen — ✅ for godkjent, 🛑 for endringer kreves — aldri i starten: `node scripts/notify-slack.mjs reviewer '*Review: godkjent* for PR #<pr>. <lenke til kommentar> ✅'` (eller tilsvarende `... <lenke til kommentar> 🛑` for endringer kreves).
 
 ## Regler
 
