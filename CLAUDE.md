@@ -1,6 +1,6 @@
 # Streamie — instruksjoner for hovedsamtalen
 
-100 % klient-side webapp (React + TypeScript + Vite, Tailwind, React Router) for film-/serieoppslag og personlig watchlist. All arkitektur og design er besluttet og dokumentert i `docs/` — les relevant dokument før beslutninger tas. Oppgavesporing skjer i GitHub-prosjektet [«Watchlist»](https://github.com/users/jonasols1g/projects/2) (prosjekt-nummer 2, eier `jonasols1g`) — se referansetabellen under; dagslogg føres fortsatt i `dev-log.md` i rota.
+100 % klient-side webapp (React + TypeScript + Vite, Tailwind, React Router) for film-/serieoppslag og personlig watchlist. All arkitektur og design er besluttet og dokumentert i `docs/` — les relevant dokument før beslutninger tas. Oppgavesporing skjer i GitHub-prosjektet [«Streamie»](https://github.com/users/jonasols1g/projects/2) (prosjekt-nummer 2, eier `jonasols1g`) — se referansetabellen under; dagslogg føres fortsatt i `dev-log.md` i rota.
 
 ### GitHub Project — referanse
 
