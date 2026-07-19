@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 // dist/index.html til dist/404.html som SPA-fallback. Direkte-lasting og
 // refresh er nettopp scenarioet der en manglende/feil fallback først slår ut
 // — det oppstår aldri i `npm run dev` eller ved vanlig in-app-navigasjon, kun
-// i det bygde produksjonsoppsettet (`vite preview` med `base: '/watchlist/'`,
+// i det bygde produksjonsoppsettet (`vite preview` med `base: '/streamie/'`,
 // som denne testen — som resten av E2E-suiten — kjører mot).
 test.describe("Dyplenker og refresh", () => {
   test("/ lastet direkte og etter refresh viser søkesiden", async ({

@@ -52,7 +52,7 @@ function cspMetaTagPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/watchlist/",
+  base: "/streamie/",
   plugins: [react(), tailwindcss(), cspMetaTagPlugin()],
   test: {
     environment: "jsdom",

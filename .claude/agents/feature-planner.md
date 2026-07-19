@@ -14,7 +14,7 @@ Du får en featureidé eller endringsforslag. Du leverer en vurdering og en plan
    - `docs/architecture.md` — lagdeling, `MediaProvider`-abstraksjonen (`CachingMediaProvider`, `CompositeMediaProvider`, `MockMediaProvider`), filstruktur, teststrategi, kjente risikoer.
    - `docs/data-model.md` — typene (`Media`, `MediaSummary`, `WatchlistItem`), localStorage-format og kvotegrenser.
    - `docs/design.md` — sider/ruter, søkeflyt (tekst + tale, `lang: 'en-US'`), watchlist-UX, styling.
-   - Åpne issues og prosjektboardet — `gh issue list -R jonasols1g/watchlist --search "<nøkkelord>"` og `gh project item-list 2 --owner jonasols1g` — filtrer på nøkkelord fra featuren og les kun de issuene som faktisk overlapper, i stedet for hver åpen issue i sin helhet.
+   - Åpne issues og prosjektboardet — `gh issue list -R jonasols1g/streamie --search "<nøkkelord>"` og `gh project item-list 2 --owner jonasols1g` — filtrer på nøkkelord fra featuren og les kun de issuene som faktisk overlapper, i stedet for hver åpen issue i sin helhet.
 
 2. **Vurder featuren mot det som finnes:**
    - Passer den inn i eksisterende arkitektur, eller krever den endringer i abstraksjonene?

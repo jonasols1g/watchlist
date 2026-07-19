@@ -9,7 +9,7 @@
 - Status-opsjoner: Backlog `f75ad846` · Ready `61e4505c` · In progress `47fc9ee4` · In review `df73e18b` · Done `98236657`
 
 ```
-gh issue create -R jonasols1g/watchlist --title "..." --body "..."
+gh issue create -R jonasols1g/streamie --title "..." --body "..."
 gh project item-add 2 --owner jonasols1g --url <issue-url> --format json   # gir item-id
 gh project item-edit --id <item-id> --project-id PVT_kwHOEfx_Xc4BdvxI \
   --field-id PVTSSF_lAHOEfx_Xc4BdvxIzhYPG40 --single-select-option-id <opsjons-id>

@@ -1,5 +1,5 @@
 {
-  "name": "watchlist",
+  "name": "streamie",
   "private": true,
   "version": "0.0.0",
   "description": "100 % klient-side webapp for å slå opp filmer og serier og holde en personlig watchlist, bygget med React, TypeScript og Vite.",

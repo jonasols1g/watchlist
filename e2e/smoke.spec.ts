@@ -3,7 +3,7 @@ import { registerFirebaseAuthStub } from "./fixtures/firebaseAuthStub.ts";
 import { registerFirestoreStub } from "./fixtures/firestoreStub.ts";
 
 // Triviell røyktest: verifiserer at produksjonsbygget serveres under
-// /watchlist/-understien og at appen faktisk rendrer.
+// /streamie/-understien og at appen faktisk rendrer.
 // DB-migrering issue B: `AuthContext` kaller `signInAnonymously` ved mount
 // på enhver side — uten denne stubben ville denne testen (som ikke bruker
 // registerApiStubs) gjort et ekte Firebase-kall (se
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   await registerFirestoreStub(page);
 });
 
-test("appen laster under /watchlist/-understien", async ({ page }) => {
+test("appen laster under /streamie/-understien", async ({ page }) => {
   await page.goto("./");
   // NavBar (fase 11, CineFind-temaet) er en bunn-fanebar uten eget
   // logo-lenkeelement — "Søk"-fanen (lenke til "/") er den nærmeste

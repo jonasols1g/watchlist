@@ -62,7 +62,7 @@ Opprettes **etter** at Del A er godkjent og merget (skyagenten trenger `/feedbac
 
 **Oppsett:**
 - Cron: `0 7 * * *` (09:00 Europe/Oslo / 07:00 UTC).
-- Repo: `https://github.com/jonasols1g/watchlist`, krever at Claude GitHub App er koblet til repoet (sjekkes ved opprettelse).
+- Repo: `https://github.com/jonasols1g/streamie`, krever at Claude GitHub App er koblet til repoet (sjekkes ved opprettelse).
 - Ingen Firebase-nøkler eller service account trengs: siden `allow read: if true` på `feedback`, kan agenten lese collectionen direkte via Firestore sitt offentlige REST-endepunkt (`GET https://firestore.googleapis.com/v1/projects/<project-id>/databases/(default)/documents/feedback`, ren `curl`, ingen credentials).
 - Slack-varsling fra routinen er valgfritt og krever at webhook-URL-en legges inn i routine-promten ved opprettelse (den ligger i dag kun i den gitignorede lokale `.claude/settings.local.json` og er ikke tilgjengelig for skyagenten automatisk) — avklares når routinen faktisk opprettes.
 
