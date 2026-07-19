@@ -2,6 +2,12 @@
 
 Kort logg over hva som er gjort per dag. Nyeste øverst. Én oppføring per dag det er gjort arbeid — noen linjer, ikke en rapport. Detaljene hører hjemme i dokumentene i `docs/`; her står bare hva som skjedde og hva som er neste steg.
 
+## 2026-07-19
+
+- **Slack-varsling for agent-arbeidsflyten** (`docs/plans/slack-varsling-subagenter.md`) satt i gang og løst via issue #34 → PR #35, full agent-loop (`dev` → `reviewer` godkjent uten funn → `verifier` «bestått med forslag») → squash-merge. Nytt script `scripts/notify-slack.mjs` POSTer til en delt Slack Incoming Webhook, med egne visningsnavn/ikoner per avsender (Orkestrator Ole, Planlegger Pia, Utvikler Ulrik, Gransker Guri, Godkjenner Gunnar). Ettlinjers varslingstillegg lagt inn i alle fire agent-filer og i `CLAUDE.md` sin "Agent-arbeidsflyt".
+- Webhooken var allerede opprettet av bruker og `SLACK_WEBHOOK_URL` satt i den gitignorerte `.claude/settings.local.json` før implementasjonen startet — dev-agentens isolerte worktree hadde derfor ikke tilgang til den (filen er utenfor versjonskontroll), så `permissions.allow`-regelen for `Bash(node scripts/notify-slack.mjs:*)` og selve leveransetesten mot ekte Slack ble fullført manuelt av hovedsamtalen etter merge — alle fem avsendere sendte uten feil.
+- Gjenstår: full trial-runde der varslingene faktisk trigges gjennom en hel `CLAUDE.md`-flyt (siden agent-filene ble redigert i samme runde som varslingskodene ble skrevet, rakk selve utviklingen av #34 ikke å produsere ekte varsler underveis). `docs/plans/slack-varsling-subagenter.md` sin statuslinje oppdateres til "fullført" når det er gjort.
+
 ## 2026-07-18
 
 - Spisset instruksjonene til de fire sub-agentene (`dev`, `reviewer`, `verifier`, `feature-planner`) i `.claude/agents/` for lavere token- og testkostnad, committet direkte på `main` (ingen kode rørt): docs-lesing målrettes med `grep -n "^#"` mot overskrifter i stedet for full-fil-lesing, `dev` kjører målrettede tester under iterasjon og full `npm test` kun rett før push, CI-logger hentes bare for feilende sjekker (ikke grønne), `verifier` kan nå hoppe over den manuelle flyten for rene docs-/test-differ, og `feature-planner` filtrerer åpne issues på nøkkelord fremfor å lese alle i sin helhet.
