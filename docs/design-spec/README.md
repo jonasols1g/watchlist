@@ -13,6 +13,8 @@ The files in this bundle are **design references created in HTML** — prototype
 
 All screens share a 390×844 mobile viewport, a shared bottom tab bar (Søk / Watchlist), and the same background: `linear-gradient(165deg, oklch(0.24 0.1 300) 0%, oklch(0.19 0.09 265) 30%, oklch(0.16 0.07 220) 60%, oklch(0.13 0.03 60) 100%)` (indigo → blue → teal → near-black, diagonal).
 
+**Unntak (post-hifi, issue #44):** Søk-skjermens tom-tilstand (screen 1, before any search) uses a distinct "plakatvegg" (poster wall) background instead — a rotated 4×4 grid of 16 colored placeholder tiles (`.cf-poster`, one gradient per tile) under a dark readability haze (`.cf-haze`), implemented as `.cf-bg`/`.cf-posters`/`.cf-poster`/`.cf-haze` in `src/index.css` and the `PosterWallBackground` component. All other screens/states (search results, detail, watchlist) keep the shared gradient above unchanged.
+
 ### 1. Søk (Search / empty state)
 - **Purpose**: Entry point. Minimal — just search and voice search, no browsing content.
 - **Layout**: Full-height column. Content area splits into two flex zones: a centered middle zone (logo + search field, vertically centered via `flex:1; justify-content:center`) and a bottom-pinned row (search button + mic button), separated so the field can sit mid-screen while the buttons stay anchored near the bottom tab bar.

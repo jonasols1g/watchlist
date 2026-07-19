@@ -102,6 +102,7 @@ Fasit for farger, typografi og layout er [docs/design-spec/README.md](./design-s
 - **Bunn-fanebar** erstatter dagens `NavBar`-lenker visuelt (samme to ruter, `/` og `/mylist`): fast posisjon, 78px, gjennomsiktig/blur, aktiv fane i magenta.
 - **Stjerne-toggle** (søkeresultat-kort og watchlist-rad) viser samme "i watchlist"-tilstand som i dag (`WatchlistToggleButton`), kun restylet — fylt hue-bakgrunn når lagt til, gjennomsiktig mørk når ikke.
 - Alle eksisterende tilstander (lasting/tom/feil, a11y, tastaturnavigasjon) videreføres uendret — dette er en restyling av eksisterende sider (fase 5–9s `SearchResultCard`, `TitleDetailPage`, `WatchlistItemCard`, `NavBar`), ikke en ny flyt.
+- **Forsidens tom-tilstand** (`HomePage` før et søk er utført) har en egen "plakatvegg"-bakgrunn (`PosterWallBackground`, `.cf-bg`/`.cf-posters`/`.cf-poster`/`.cf-haze` i `src/index.css`) i stedet for den delte indigo→blå→teal-gradienten — 16 fargede, roterte plakat-fliser med en mørk dis over for lesbarhet. Kun denne ene tilstanden er unntatt; søkeresultater, detaljside og watchlist bruker fortsatt den delte body-gradienten (issue #44).
 
 ### Bevisste avvik fra pixel-perfect
 
