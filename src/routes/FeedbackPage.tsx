@@ -62,7 +62,7 @@ export function FeedbackPage({
     <section>
       <h1 className="font-heading text-2xl font-bold">Gi tilbakemelding</h1>
       <p className="text-text-muted mt-2">
-        Fortell oss hva du synes om CineFind — hva fungerer, og hva kan bli
+        Fortell oss hva du synes om Streamie — hva fungerer, og hva kan bli
         bedre?
       </p>
 
