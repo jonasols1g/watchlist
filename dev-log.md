@@ -2,6 +2,12 @@
 
 Kort logg over hva som er gjort per dag. Nyeste øverst. Én oppføring per dag det er gjort arbeid — noen linjer, ikke en rapport. Detaljene hører hjemme i dokumentene i `docs/`; her står bare hva som skjedde og hva som er neste steg.
 
+## 2026-07-20
+
+- **Andre kjøring av Del B-routinen** (feedback-skyagent): hentet 2 dokumenter fra `feedback`-collectionen. Begge hoppet over, ingen nytt issue/PR opprettet:
+  - `X1jHuyA76USsUVZRzNPQ` (tegn-teller-forespørselen fra forrige kjøring) — allerede deduplisert, finnes i issue #42 (`Feedback-ID`-linjen), løst av PR #43 samme dag.
+  - `BkcWNQe5zOlgkddsypqx` (tekst `"Verifisering PR#43 tegn-teller 1784469582366"`, score 4) — vurdert som testdata fra verifisering av PR #43 (skrevet inn i feedback-skjemaet under manuell/verifier-drevet gjennomkjøring), ikke reell brukertilbakemelding. Ingen konkret produktforbedring å hente ut → hoppet over.
+
 ## 2026-07-19
 
 - **Slack-varsling for agent-arbeidsflyten** (`docs/plans/slack-varsling-subagenter.md`) satt i gang og løst via issue #34 → PR #35, full agent-loop (`dev` → `reviewer` godkjent uten funn → `verifier` «bestått med forslag») → squash-merge. Nytt script `scripts/notify-slack.mjs` POSTer til en delt Slack Incoming Webhook, med egne visningsnavn/ikoner per avsender (Orkestrator Ole, Planlegger Pia, Utvikler Ulrik, Gransker Guri, Godkjenner Gunnar). Ettlinjers varslingstillegg lagt inn i alle fire agent-filer og i `CLAUDE.md` sin "Agent-arbeidsflyt".
